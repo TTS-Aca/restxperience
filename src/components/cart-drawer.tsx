@@ -3,22 +3,25 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import type { CommerceMode } from "@/lib/commerce";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "./cart-provider";
 
 export function CartDrawer({
   currency,
-  paymentEnabled,
+  commerceMode,
   tableToken,
   sessionId,
   guestEmail,
+  expiresAt,
   onOrderPlaced,
 }: {
   currency: string;
-  paymentEnabled: boolean;
+  commerceMode: CommerceMode;
   tableToken: string;
   sessionId: string;
   guestEmail?: string | null;
+  expiresAt?: string | null;
   onOrderPlaced?: () => void;
 }) {
   const { items, total, count, setQuantity, removeItem, clear } = useCart();
@@ -27,7 +30,7 @@ export function CartDrawer({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  async function checkout(mode: "order" | "pay") {
+  async function payFirst() {
     if (!items.length) return;
     setBusy(true);
     setMessage(null);
@@ -39,7 +42,7 @@ export function CartDrawer({
           sessionId,
           tableToken,
           email: email || undefined,
-          pay: mode === "pay",
+          origin: window.location.origin,
           items: items.map((i) => ({
             productId: i.productId,
             quantity: i.quantity,
@@ -48,22 +51,35 @@ export function CartDrawer({
       });
       const data = await res.json();
       if (!res.ok) {
-        setMessage(data.error || "No se pudo completar.");
+        setMessage(data.error || "No se pudo iniciar el pago.");
         return;
       }
-      clear();
-      setMessage(
-        mode === "pay"
-          ? `Pago registrado. Orden ${data.orderId.slice(0, 8)}. El mesero ya sabe que es tu mesa.`
-          : `Pedido enviado a tu mesa. Orden ${data.orderId.slice(0, 8)}.`
-      );
-      onOrderPlaced?.();
+
+      // Orden queda pending_payment; comanda NO se envía hasta confirmar pago
+      if (data.checkoutUrl) {
+        setMessage(
+          data.checkoutMode === "demo"
+            ? "Modo demo: te llevamos a confirmar el pago. La comanda solo sale si confirmas."
+            : "Redirigiendo a Stripe…"
+        );
+        clear();
+        onOrderPlaced?.();
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+
+      setMessage("No se obtuvo URL de checkout.");
     } catch {
       setMessage("Error de conexión. Intenta de nuevo.");
     } finally {
       setBusy(false);
     }
   }
+
+  const modeLabel =
+    commerceMode === "softrestaurant"
+      ? "Pagar y enviar comanda (SoftRestaurant)"
+      : "Pagar y enviar a mi mesa";
 
   return (
     <>
@@ -106,6 +122,17 @@ export function CartDrawer({
                   <X className="h-4 w-4 text-white" />
                 </button>
               </div>
+
+              {expiresAt && (
+                <p className="mb-3 text-xs text-white/40">
+                  Sesión válida hasta{" "}
+                  {new Date(expiresAt).toLocaleTimeString("es-MX", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}{" "}
+                  (se cierra a los 15 min sin pago)
+                </p>
+              )}
 
               {!items.length ? (
                 <p className="py-8 text-center text-white/50">
@@ -180,32 +207,25 @@ export function CartDrawer({
                   </span>
                 </div>
 
+                <p className="text-xs leading-relaxed text-white/45">
+                  Regla del restaurante: primero se paga, después se envía la
+                  comanda a tu mesa. Sin pago no llega nada a cocina.
+                </p>
+
                 {message && (
                   <p className="rounded-xl bg-white/10 px-3 py-2 text-sm text-[#e8d5b5]">
                     {message}
                   </p>
                 )}
 
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    disabled={!items.length || busy}
-                    onClick={() => checkout("order")}
-                    className="btn-primary w-full disabled:opacity-40"
-                  >
-                    {busy ? "Enviando…" : "Enviar pedido a mi mesa"}
-                  </button>
-                  {paymentEnabled && (
-                    <button
-                      type="button"
-                      disabled={!items.length || busy}
-                      onClick={() => checkout("pay")}
-                      className="btn-ghost w-full disabled:opacity-40"
-                    >
-                      Pagar ahora
-                    </button>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  disabled={!items.length || busy}
+                  onClick={() => void payFirst()}
+                  className="btn-primary w-full disabled:opacity-40"
+                >
+                  {busy ? "Abriendo pago…" : modeLabel}
+                </button>
               </div>
             </motion.aside>
           </>

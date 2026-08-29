@@ -28,8 +28,7 @@ type Settings = {
   restaurantName: string;
   tagline: string;
   welcomeMessage: string;
-  paymentEnabled: boolean;
-  softRestaurantEnabled: boolean;
+  commerceMode: "menu_only" | "stripe" | "softrestaurant";
   softRestaurantEndpoint: string | null;
   dishOfDayId: string | null;
 };
@@ -39,6 +38,7 @@ type Order = {
   status: string;
   total: number;
   paymentMode: string;
+  comandaSent: boolean;
   softRestaurantId: string | null;
   createdAt: string;
   guestEmail: string | null;
@@ -222,6 +222,7 @@ export function AdminPanel({ origin }: { origin: string }) {
                     <p className="font-medium text-white">
                       {o.session.table.label} ·{" "}
                       <span className="text-[#c4a574]">{o.status}</span>
+                      {o.comandaSent ? " · comanda enviada" : " · sin comanda"}
                     </p>
                     <p className="text-xs text-white/40">
                       {new Date(o.createdAt).toLocaleString("es-MX")} ·{" "}
@@ -468,49 +469,49 @@ export function AdminPanel({ origin }: { origin: string }) {
             </label>
 
             <div className="space-y-3 rounded-xl border border-white/10 p-4">
-              <p className="text-sm font-medium text-white">Módulo de pago</p>
-              <label className="flex items-center gap-2 text-sm text-white/70">
-                <input
-                  type="checkbox"
-                  checked={settings.paymentEnabled}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      paymentEnabled: e.target.checked,
-                    })
-                  }
-                />
-                Activar pago / checkout en el carrito
-              </label>
-              <label className="flex items-center gap-2 text-sm text-white/70">
-                <input
-                  type="checkbox"
-                  checked={settings.softRestaurantEnabled}
-                  disabled={!settings.paymentEnabled}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      softRestaurantEnabled: e.target.checked,
-                    })
-                  }
-                />
-                Vincular SoftRestaurant (cuando haya endpoint)
-              </label>
-              <input
+              <p className="text-sm font-medium text-white">
+                Modo de comercio
+              </p>
+              <select
                 className="input-glass"
-                placeholder="Endpoint SoftRestaurant (opcional)"
-                disabled={!settings.softRestaurantEnabled}
-                value={settings.softRestaurantEndpoint || ""}
+                value={settings.commerceMode}
                 onChange={(e) =>
                   setSettings({
                     ...settings,
-                    softRestaurantEndpoint: e.target.value,
+                    commerceMode: e.target.value as Settings["commerceMode"],
                   })
                 }
-              />
-              <p className="text-xs text-white/40">
-                Sin pago: el menú solo envía pedidos a mesa. Con pago activo y
-                SoftRestaurant, las órdenes pagadas se reenvían al POS.
+              >
+                <option value="stripe">
+                  Stripe — pago primero, luego comanda
+                </option>
+                <option value="softrestaurant">
+                  SoftRestaurant — pago primero, luego POS/comanda
+                </option>
+                <option value="menu_only">
+                  Solo menú — sin carrito ni pedidos
+                </option>
+              </select>
+
+              {settings.commerceMode === "softrestaurant" && (
+                <input
+                  className="input-glass"
+                  placeholder="Endpoint SoftRestaurant (opcional por ahora)"
+                  value={settings.softRestaurantEndpoint || ""}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      softRestaurantEndpoint: e.target.value,
+                    })
+                  }
+                />
+              )}
+
+              <p className="text-xs leading-relaxed text-white/40">
+                En Stripe y SoftRestaurant la comanda solo se libera cuando el
+                pago confirma. Sin pago no llega nada a la mesa. Sesiones sin
+                concretar se cierran a los 15 minutos. SoftRestaurant: endpoint
+                pendiente de investigar; mientras el stub simula el envío.
               </p>
             </div>
 

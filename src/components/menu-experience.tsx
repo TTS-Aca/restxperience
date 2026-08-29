@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { CommerceMode } from "@/lib/commerce";
+import { isOrderingEnabled } from "@/lib/commerce";
 import { CartDrawer } from "./cart-drawer";
 import { CartProvider } from "./cart-provider";
 import { ChatBot } from "./chat-bot";
@@ -23,10 +25,11 @@ export function MenuExperience({
   tagline,
   welcomeMessage,
   currency,
-  paymentEnabled,
+  commerceMode,
   dishOfDayName,
   categories,
   canReview,
+  expiresAt,
 }: {
   tableLabel: string;
   tableToken: string;
@@ -36,13 +39,15 @@ export function MenuExperience({
   tagline: string;
   welcomeMessage: string;
   currency: string;
-  paymentEnabled: boolean;
+  commerceMode: CommerceMode;
   dishOfDayName: string | null;
   categories: CategoryBlock[];
   canReview: boolean;
+  expiresAt: string | null;
 }) {
   const [active, setActive] = useState(categories[0]?.id || "");
   const [email, setEmail] = useState(initialEmail);
+  const ordering = isOrderingEnabled(commerceMode);
   const flat = useMemo(
     () => categories.flatMap((c) => c.products),
     [categories]
@@ -69,6 +74,12 @@ export function MenuExperience({
               <span className="h-1.5 w-1.5 rounded-full bg-[#c4a574]" />
               Comida del día: {dishOfDayName}
             </div>
+          )}
+          {!ordering && (
+            <p className="mt-4 text-sm text-white/45">
+              Modo solo menú: puedes explorar el catálogo. Los pedidos en línea
+              no están activos.
+            </p>
           )}
         </header>
 
@@ -117,6 +128,7 @@ export function MenuExperience({
                     product={product}
                     currency={currency}
                     guestEmail={email}
+                    orderingEnabled={ordering}
                   />
                 ))}
               </div>
@@ -134,13 +146,16 @@ export function MenuExperience({
           )}
         </main>
 
-        <CartDrawer
-          currency={currency}
-          paymentEnabled={paymentEnabled}
-          tableToken={tableToken}
-          sessionId={sessionId}
-          guestEmail={email}
-        />
+        {ordering && (
+          <CartDrawer
+            currency={currency}
+            commerceMode={commerceMode}
+            tableToken={tableToken}
+            sessionId={sessionId}
+            guestEmail={email}
+            expiresAt={expiresAt}
+          />
+        )}
         <ChatBot
           restaurantName={restaurantName}
           welcomeMessage={welcomeMessage}
