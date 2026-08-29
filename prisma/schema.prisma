@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Settings {
+  id                     String  @id @default("default")
+  restaurantName         String  @default("RestXperience")
+  tagline                String  @default("Tu experiencia gastronómica digital")
+  welcomeMessage         String  @default("Bienvenido. Estamos felices de recibirte.")
+  paymentEnabled         Boolean @default(false)
+  softRestaurantEnabled  Boolean @default(false)
+  softRestaurantEndpoint String?
+  dishOfDayId            String?
+  adminPasswordHash      String
+  currency               String  @default("MXN")
+  updatedAt              DateTime @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  products  Product[]
+}
+
+model Product {
+  id           String         @id @default(cuid())
+  name         String
+  slug         String         @unique
+  price        Float
+  description  String         @default("")
+  ingredients  String         @default("")
+  calories     Int?
+  imageUrl     String?
+  videoUrl     String?
+  available    Boolean        @default(true)
+  sortOrder    Int            @default(0)
+  categoryId   String
+  category     Category       @relation(fields: [categoryId], references: [id])
+  ratings      Rating[]
+  orderItems   OrderItem[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Table {
+  id        String    @id @default(cuid())
+  number    Int       @unique
+  label     String
+  token     String    @unique
+  active    Boolean   @default(true)
+  sessions  Session[]
+  createdAt DateTime  @default(now())
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tableId   String
+  table     Table    @relation(fields: [tableId], references: [id])
+  email     String?
+  status    String   @default("open") // open | paid | closed
+  orders    Order[]
+  reviews   Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  sessionId       String
+  session         Session     @relation(fields: [sessionId], references: [id])
+  status          String      @default("pending") // pending | paid | sent | cancelled
+  paymentMode     String      @default("none") // none | simulated | softrestaurant
+  total           Float
+  guestEmail      String?
+  softRestaurantId String?
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  quantity  Int
+  unitPrice Float
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  email     String
+  stars     Int
+  createdAt DateTime @default(now())
+
+  @@unique([productId, email])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  email     String
+  stars     Int
+  comment   String
+  createdAt DateTime @default(now())
+}
