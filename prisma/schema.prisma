@@ -12,8 +12,8 @@ model Settings {
   restaurantName         String  @default("RestXperience")
   tagline                String  @default("Tu experiencia gastronómica digital")
   welcomeMessage         String  @default("Bienvenido. Estamos felices de recibirte.")
-  paymentEnabled         Boolean @default(false)
-  softRestaurantEnabled  Boolean @default(false)
+  /// menu_only | stripe | softrestaurant
+  commerceMode           String  @default("stripe")
   softRestaurantEndpoint String?
   dishOfDayId            String?
   adminPasswordHash      String
@@ -60,29 +60,37 @@ model Table {
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  tableId   String
-  table     Table    @relation(fields: [tableId], references: [id])
-  email     String?
-  status    String   @default("open") // open | paid | closed
-  orders    Order[]
-  reviews   Review[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  tableId        String
+  table          Table    @relation(fields: [tableId], references: [id])
+  email          String?
+  status         String   @default("open") // open | paid | closed
+  lastActivityAt DateTime @default(now())
+  expiresAt      DateTime?
+  orders         Order[]
+  reviews        Review[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  sessionId       String
-  session         Session     @relation(fields: [sessionId], references: [id])
-  status          String      @default("pending") // pending | paid | sent | cancelled
-  paymentMode     String      @default("none") // none | simulated | softrestaurant
-  total           Float
-  guestEmail      String?
+  id               String      @id @default(cuid())
+  sessionId        String
+  session          Session     @relation(fields: [sessionId], references: [id])
+  /// pending_payment | paid | cancelled
+  status           String      @default("pending_payment")
+  /// stripe | softrestaurant | none
+  paymentMode      String      @default("stripe")
+  total            Float
+  guestEmail       String?
   softRestaurantId String?
-  items           OrderItem[]
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  stripeSessionId  String?
+  /// true solo después de pago confirmado → comanda a mesa
+  comandaSent      Boolean     @default(false)
+  paidAt           DateTime?
+  items            OrderItem[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 model OrderItem {

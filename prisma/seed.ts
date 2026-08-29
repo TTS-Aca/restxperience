@@ -37,8 +37,7 @@ async function main() {
       tagline: "Menú digital con alma de parrilla",
       welcomeMessage:
         "Qué gusto tenerte en la mesa. Explora el menú, pide con calma y déjanos cuidarte esta noche.",
-      paymentEnabled: false,
-      softRestaurantEnabled: false,
+      commerceMode: "stripe",
       adminPasswordHash: passwordHash,
       currency: "MXN",
     },

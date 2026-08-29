@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
+import { isOrderingEnabled } from "@/lib/commerce";
 import { prisma } from "@/lib/db";
-import { sendToSoftRestaurant } from "@/lib/softrestaurant";
+import { assertSessionOpen, touchSession } from "@/lib/session";
+import { createStripeCheckout } from "@/lib/stripe";
 
+/**
+ * Crea orden en pending_payment y abre checkout.
+ * La comanda NO se envía aquí — solo tras confirmar pago.
+ */
 export async function POST(req: Request) {
   const body = await req.json();
   const sessionId = String(body.sessionId || "");
@@ -9,29 +15,28 @@ export async function POST(req: Request) {
   const email = body.email
     ? String(body.email).trim().toLowerCase()
     : undefined;
-  const pay = Boolean(body.pay);
   const items = Array.isArray(body.items) ? body.items : [];
+  const origin = String(body.origin || new URL(req.url).origin);
 
   if (!sessionId || !tableToken || !items.length) {
     return NextResponse.json({ error: "Pedido incompleto" }, { status: 400 });
   }
 
-  const session = await prisma.session.findUnique({
-    where: { id: sessionId },
-    include: { table: true },
-  });
-
-  if (!session || session.table.token !== tableToken) {
-    return NextResponse.json({ error: "Sesión inválida" }, { status: 400 });
-  }
-
   const settings = await prisma.settings.findUnique({ where: { id: "default" } });
-  if (pay && !settings?.paymentEnabled) {
+  const mode = settings?.commerceMode || "stripe";
+
+  if (!isOrderingEnabled(mode)) {
     return NextResponse.json(
-      { error: "El módulo de pago no está activo." },
+      { error: "Este menú es solo consulta. Los pedidos no están activos." },
       { status: 400 }
     );
   }
+
+  const gate = await assertSessionOpen(sessionId, tableToken);
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: gate.status });
+  }
+  const { session } = gate;
 
   const productIds = items.map((i: { productId: string }) => i.productId);
   const products = await prisma.product.findMany({
@@ -64,111 +69,70 @@ export async function POST(req: Request) {
 
   const total = lines.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
 
-  let paymentMode = "none";
-  let status = "sent";
-  let softRestaurantId: string | undefined;
-
-  if (pay && settings?.paymentEnabled) {
-    paymentMode = settings.softRestaurantEnabled
-      ? "softrestaurant"
-      : "simulated";
-    status = "paid";
-
-    if (settings.softRestaurantEnabled) {
-      const result = await sendToSoftRestaurant(
-        {
-          orderId: "pending",
-          tableNumber: session.table.number,
-          tableLabel: session.table.label,
-          total,
-          guestEmail: email || session.email,
-          items: lines.map((l) => ({
-            name: l.name,
-            quantity: l.quantity,
-            unitPrice: l.unitPrice,
-          })),
-        },
-        settings.softRestaurantEndpoint
-      );
-
-      if (!result.ok) {
-        return NextResponse.json({ error: result.message }, { status: 502 });
-      }
-      softRestaurantId = result.externalId;
-    } else {
-      const result = await sendToSoftRestaurant({
-        orderId: "pending",
-        tableNumber: session.table.number,
-        tableLabel: session.table.label,
-        total,
-        guestEmail: email || session.email,
-        items: lines.map((l) => ({
-          name: l.name,
-          quantity: l.quantity,
-          unitPrice: l.unitPrice,
-        })),
-      });
-      softRestaurantId = result.externalId;
-    }
+  if (email) {
+    await prisma.session.update({
+      where: { id: sessionId },
+      data: { email },
+    });
   }
+  await touchSession(sessionId);
 
   const order = await prisma.order.create({
     data: {
       sessionId,
-      status,
-      paymentMode,
+      status: "pending_payment",
+      paymentMode: mode === "softrestaurant" ? "softrestaurant" : "stripe",
       total,
       guestEmail: email || session.email,
-      softRestaurantId,
-      items: {
-        create: lines,
-      },
+      comandaSent: false,
+      items: { create: lines },
     },
   });
 
-  if (email) {
-    await prisma.session.update({
-      where: { id: sessionId },
-      data: {
-        email,
-        status: status === "paid" ? "paid" : session.status,
-      },
-    });
-  } else if (status === "paid") {
-    await prisma.session.update({
-      where: { id: sessionId },
-      data: { status: "paid" },
-    });
-  }
+  const successUrl = `${origin}/mesa/${tableToken}/pago?ok=1`;
+  const cancelUrl = `${origin}/mesa/${tableToken}/pago?cancel=1&orderId=${order.id}`;
 
-  // Re-send with real order id for SoftRestaurant when endpoint exists
-  if (
-    pay &&
-    settings?.paymentEnabled &&
-    settings.softRestaurantEnabled &&
-    settings.softRestaurantEndpoint
-  ) {
-    await sendToSoftRestaurant(
-      {
-        orderId: order.id,
-        tableNumber: session.table.number,
-        tableLabel: session.table.label,
-        total,
-        guestEmail: email || session.email,
-        items: lines.map((l) => ({
-          name: l.name,
-          quantity: l.quantity,
-          unitPrice: l.unitPrice,
-        })),
-      },
-      settings.softRestaurantEndpoint
-    );
+  // SoftRestaurant mode: por ahora mismo flujo de cobro (Stripe/demo);
+  // la comanda al POS solo ocurre en fulfill tras pago.
+  const checkout = await createStripeCheckout({
+    orderId: order.id,
+    currency: settings?.currency || "MXN",
+    lines: lines.map((l) => ({
+      name: l.name,
+      quantity: l.quantity,
+      unitPrice: l.unitPrice,
+    })),
+    successUrl,
+    cancelUrl,
+    customerEmail: email || session.email,
+    metadata: {
+      tableToken,
+      sessionId,
+      commerceMode: mode,
+    },
+  });
+
+  if (checkout.mode === "stripe") {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { stripeSessionId: checkout.stripeSessionId },
+    });
+    return NextResponse.json({
+      ok: true,
+      orderId: order.id,
+      status: "pending_payment",
+      checkoutUrl: checkout.checkoutUrl,
+      checkoutMode: "stripe",
+    });
   }
 
   return NextResponse.json({
     ok: true,
     orderId: order.id,
-    status: order.status,
-    softRestaurantId,
+    status: "pending_payment",
+    checkoutUrl: checkout.confirmUrl,
+    checkoutMode: "demo",
+    message:
+      "Modo demo: sin STRIPE_SECRET_KEY. Confirma el pago para liberar la comanda.",
   });
 }

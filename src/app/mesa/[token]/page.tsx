@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { MenuExperience } from "@/components/menu-experience";
+import type { CommerceMode } from "@/lib/commerce";
 import { prisma } from "@/lib/db";
+import { getOrCreateTableSession } from "@/lib/session";
 import { avgRating } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -15,18 +17,7 @@ export default async function MesaPage({
   const table = await prisma.table.findUnique({ where: { token } });
   if (!table || !table.active) notFound();
 
-  let session = await prisma.session.findFirst({
-    where: { tableId: table.id, status: { in: ["open", "paid"] } },
-    orderBy: { createdAt: "desc" },
-    include: { orders: true },
-  });
-
-  if (!session) {
-    session = await prisma.session.create({
-      data: { tableId: table.id },
-      include: { orders: true },
-    });
-  }
+  const session = await getOrCreateTableSession(table.id);
 
   const settings = await prisma.settings.findUnique({ where: { id: "default" } });
   const categories = await prisma.category.findMany({
@@ -48,6 +39,8 @@ export default async function MesaPage({
     session.status === "paid" ||
     session.orders.some((o) => o.status === "paid");
 
+  const commerceMode = (settings?.commerceMode || "stripe") as CommerceMode;
+
   return (
     <MenuExperience
       tableLabel={table.label}
@@ -58,9 +51,10 @@ export default async function MesaPage({
       tagline={settings?.tagline || ""}
       welcomeMessage={settings?.welcomeMessage || ""}
       currency={settings?.currency || "MXN"}
-      paymentEnabled={Boolean(settings?.paymentEnabled)}
+      commerceMode={commerceMode}
       dishOfDayName={dishOfDay?.name || null}
       canReview={canReview}
+      expiresAt={session.expiresAt?.toISOString() || null}
       categories={categories
         .filter((c) => c.products.length)
         .map((c) => ({

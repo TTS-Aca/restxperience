@@ -33,15 +33,17 @@ Abre [http://localhost:3000](http://localhost:3000).
 Contraseña por defecto: `restx-admin`  
 Configurable con `ADMIN_PASSWORD` al hacer seed.
 
-## Pago / SoftRestaurant
+## Pago / SoftRestaurant / Solo menú
 
-En **Configuración** del panel:
+En **Configuración** del panel elige `commerceMode`:
 
-1. **Activar pago** — muestra “Pagar ahora” en el carrito.
-2. **Vincular SoftRestaurant** — reenvía la orden al endpoint configurado.
-3. Sin endpoint: modo simulación (ticket `SR-SIM-…`).
+1. **stripe** (default) — RestXperience cobra. La comanda **solo** sale cuando el pago confirma.
+2. **softrestaurant** — Misma regla pago-primero; tras pagar se reenvía al endpoint POS (stub hasta tener params).
+3. **menu_only** — Catálogo visual sin carrito.
 
-Sin pago activo, el flujo es solo menú + “Enviar pedido a mi mesa”.
+Sin `STRIPE_SECRET_KEY` el checkout usa **modo demo** (confirma en `/mesa/.../pago`).
+
+Sesiones sin pago se cierran a los **15 minutos**.
 
 ## Correo y reseñas
 

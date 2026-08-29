@@ -62,8 +62,11 @@ export async function PATCH(req: Request) {
         restaurantName: body.restaurantName,
         tagline: body.tagline,
         welcomeMessage: body.welcomeMessage,
-        paymentEnabled: Boolean(body.paymentEnabled),
-        softRestaurantEnabled: Boolean(body.softRestaurantEnabled),
+        commerceMode: ["menu_only", "stripe", "softrestaurant"].includes(
+          String(body.commerceMode)
+        )
+          ? String(body.commerceMode)
+          : "stripe",
         softRestaurantEndpoint: body.softRestaurantEndpoint || null,
         dishOfDayId: body.dishOfDayId || null,
       },

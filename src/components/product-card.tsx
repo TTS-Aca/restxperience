@@ -23,10 +23,12 @@ export function ProductCard({
   product,
   currency,
   guestEmail,
+  orderingEnabled = true,
 }: {
   product: MenuProduct;
   currency: string;
   guestEmail?: string | null;
+  orderingEnabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [stars, setStars] = useState(0);
@@ -108,7 +110,7 @@ export function ProductCard({
       </button>
 
       <div className="space-y-3 p-4">
-        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1 text-[#c4a574]">
             {Array.from({ length: 5 }).map((_, i) => (
               <Star
@@ -126,20 +128,22 @@ export function ProductCard({
                 : "Sin calificar"}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              addItem({
-                productId: product.id,
-                name: product.name,
-                price: product.price,
-                imageUrl: product.imageUrl,
-              })
-            }
-            className="btn-primary text-sm"
-          >
-            Agregar
-          </button>
+          {orderingEnabled && (
+            <button
+              type="button"
+              onClick={() =>
+                addItem({
+                  productId: product.id,
+                  name: product.name,
+                  price: product.price,
+                  imageUrl: product.imageUrl,
+                })
+              }
+              className="btn-primary text-sm"
+            >
+              Agregar
+            </button>
+          )}
         </div>
 
         {product.description && !open && (
