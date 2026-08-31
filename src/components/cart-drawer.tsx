@@ -104,7 +104,7 @@ export function CartDrawer({
               onClick={() => setOpen(false)}
             />
             <motion.aside
-              className="glass-sheet fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl p-5"
+              className="glass-sheet fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-4 sm:bottom-4 sm:top-4 sm:max-h-none sm:w-full sm:max-w-md sm:rounded-3xl sm:p-5"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}

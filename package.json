@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
@@ -25,8 +25,13 @@
     "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "prisma": "^5.22.0",
     "stripe": "^17.7.0",
+    "tsx": "^4.23.12",
     "zod": "^4.5.4"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -38,9 +43,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
-    "prisma": "^5.22.0",
     "tailwindcss": "^4",
-    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

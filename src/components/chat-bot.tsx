@@ -88,7 +88,7 @@ export function ChatBot({
       <AnimatePresence>
         {open && (
           <motion.div
-            className="glass-sheet fixed right-4 bottom-24 z-40 flex h-[min(70vh,520px)] w-[min(100%-2rem,360px)] flex-col overflow-hidden rounded-3xl"
+            className="glass-sheet fixed inset-x-3 bottom-24 z-40 flex h-[min(70vh,520px)] flex-col overflow-hidden rounded-3xl sm:inset-x-auto sm:right-4 sm:w-[360px]"
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}

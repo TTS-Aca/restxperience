@@ -3,6 +3,8 @@
  * Sin STRIPE_SECRET_KEY opera en modo demo (confirma localmente).
  */
 
+import type Stripe from "stripe";
+
 export type StripeLineItem = {
   name: string;
   quantity: number;
@@ -21,12 +23,30 @@ export type CreateCheckoutResult =
       demoToken: string;
     };
 
+const API_VERSION = "2025-02-24.acacia" as const;
+
 function toCents(amount: number) {
   return Math.round(amount * 100);
 }
 
 export function stripeConfigured() {
   return Boolean(process.env.STRIPE_SECRET_KEY);
+}
+
+export function webhookConfigured() {
+  return Boolean(
+    process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET
+  );
+}
+
+export async function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY no configurada");
+  }
+  const Stripe = (await import("stripe")).default;
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: API_VERSION,
+  });
 }
 
 export async function createStripeCheckout(opts: {
@@ -48,14 +68,11 @@ export async function createStripeCheckout(opts: {
     return { mode: "demo", confirmUrl, demoToken };
   }
 
-  // Dynamic import to keep build working without stripe types if unused
-  const Stripe = (await import("stripe")).default;
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-02-24.acacia",
-  });
-
+  const stripe = await getStripe();
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    locale: "es",
+    payment_method_types: ["card"],
     success_url: `${opts.successUrl}${
       opts.successUrl.includes("?") ? "&" : "?"
     }session_id={CHECKOUT_SESSION_ID}&orderId=${opts.orderId}`,
@@ -88,16 +105,31 @@ export async function createStripeCheckout(opts: {
 
 export async function verifyStripeSession(stripeSessionId: string) {
   if (!stripeConfigured()) {
-    return { paid: false, reason: "Stripe no configurado" };
+    return { paid: false as const, reason: "Stripe no configurado" };
   }
-  const Stripe = (await import("stripe")).default;
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-02-24.acacia",
-  });
+  const stripe = await getStripe();
   const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
   return {
     paid: session.payment_status === "paid",
     orderId: session.metadata?.orderId,
     session,
   };
+}
+
+export async function constructStripeWebhookEvent(
+  rawBody: string,
+  signature: string
+): Promise<Stripe.Event> {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error("STRIPE_WEBHOOK_SECRET no configurada");
+  }
+  const stripe = await getStripe();
+  return stripe.webhooks.constructEvent(rawBody, signature, secret);
+}
+
+export function checkoutSessionOrderId(
+  session: Stripe.Checkout.Session
+): string | null {
+  return session.metadata?.orderId || null;
 }

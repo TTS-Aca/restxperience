@@ -98,11 +98,11 @@ export function ProductCard({
             </div>
           )}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
-          <div className="absolute right-3 bottom-3 left-3 flex items-end justify-between gap-3">
-            <h3 className="font-[family-name:var(--font-display)] text-xl leading-tight text-white drop-shadow">
+          <div className="absolute right-3 bottom-3 left-3 flex items-end justify-between gap-2">
+            <h3 className="min-w-0 font-[family-name:var(--font-display)] text-lg leading-tight text-white drop-shadow sm:text-xl">
               {product.name}
             </h3>
-            <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-sm font-medium text-white backdrop-blur-md">
+            <span className="shrink-0 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-md sm:px-3 sm:text-sm">
               {formatPrice(product.price, currency)}
             </span>
           </div>

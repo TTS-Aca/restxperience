@@ -4,6 +4,24 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+async function confirmPayment(payload: {
+  orderId?: string | null;
+  stripeSessionId?: string | null;
+  demo: boolean;
+}) {
+  const res = await fetch("/api/checkout/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      orderId: payload.orderId || undefined,
+      stripeSessionId: payload.stripeSessionId || undefined,
+      demo: payload.demo,
+    }),
+  });
+  const data = await res.json();
+  return { res, data };
+}
+
 export function PaymentReturn({ tableToken }: { tableToken: string }) {
   const params = useSearchParams();
   const [status, setStatus] = useState<"loading" | "ok" | "cancel" | "error">(
@@ -37,46 +55,51 @@ export function PaymentReturn({ tableToken }: { tableToken: string }) {
     }
 
     async function confirm() {
+      let resolvedOrderId = orderId;
+      if (!resolvedOrderId && demo) {
+        try {
+          const parsed = JSON.parse(
+            atob(demo.replace(/-/g, "+").replace(/_/g, "/"))
+          ) as { orderId?: string };
+          resolvedOrderId = parsed.orderId || null;
+        } catch {
+          resolvedOrderId = params.get("orderId");
+        }
+      }
+
+      if (!resolvedOrderId && !stripeSessionId) {
+        setStatus("error");
+        setMessage("No se encontró la orden.");
+        return;
+      }
+
       try {
-        // Demo flow puts orderId in query; Stripe puts session_id
-        let resolvedOrderId = orderId;
-        if (!resolvedOrderId && demo) {
-          try {
-            const parsed = JSON.parse(
-              atob(demo.replace(/-/g, "+").replace(/_/g, "/"))
-            ) as { orderId?: string };
-            resolvedOrderId = parsed.orderId || null;
-          } catch {
-            resolvedOrderId = params.get("orderId");
-          }
-        }
-
-        if (!resolvedOrderId) {
-          setStatus("error");
-          setMessage("No se encontró la orden.");
-          return;
-        }
-
-        const res = await fetch("/api/checkout/confirm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        for (let attempt = 0; attempt < 8; attempt++) {
+          const { res, data } = await confirmPayment({
             orderId: resolvedOrderId,
-            stripeSessionId: stripeSessionId || undefined,
+            stripeSessionId,
             demo: Boolean(demo) && !stripeSessionId,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
+          });
+
+          if (res.ok) {
+            setStatus("ok");
+            setMessage(
+              data.message ||
+                "Pago confirmado. La comanda ya va camino a tu mesa."
+            );
+            return;
+          }
+
+          if (res.status === 402 && attempt < 7) {
+            setMessage("Stripe está confirmando el cobro…");
+            await new Promise((r) => setTimeout(r, 1500));
+            continue;
+          }
+
           setStatus("error");
           setMessage(data.error || "No se pudo confirmar el pago.");
           return;
         }
-        setStatus("ok");
-        setMessage(
-          data.message ||
-            "Pago confirmado. La comanda ya va camino a tu mesa."
-        );
       } catch {
         setStatus("error");
         setMessage("Error de conexión al confirmar el pago.");
@@ -87,9 +110,9 @@ export function PaymentReturn({ tableToken }: { tableToken: string }) {
   }, [params]);
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center px-6">
+    <div className="relative flex min-h-dvh items-center justify-center px-4 py-10 sm:px-6">
       <div className="atmosphere" />
-      <div className="glass-card relative z-10 w-full max-w-md space-y-4 p-8 text-center">
+      <div className="glass-card relative z-10 w-full max-w-md space-y-4 p-6 text-center sm:p-8">
         <p className="text-xs tracking-[0.3em] text-[#c4a574]/80 uppercase">
           Pago
         </p>

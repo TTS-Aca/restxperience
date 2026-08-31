@@ -15,6 +15,14 @@ function slugify(text: string) {
 }
 
 async function main() {
+  const alreadySeeded = await prisma.settings.findUnique({
+    where: { id: "default" },
+  });
+  if (alreadySeeded && process.env.FORCE_SEED !== "1") {
+    console.log("Seed omitido: la base ya tiene datos. FORCE_SEED=1 para resetear.");
+    return;
+  }
+
   await prisma.review.deleteMany();
   await prisma.rating.deleteMany();
   await prisma.orderItem.deleteMany();

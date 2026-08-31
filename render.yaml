@@ -1,0 +1,36 @@
+databases:
+  - name: restxperience-db
+    plan: free
+    databaseName: restxperience
+    user: restx
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: restxperience
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install --production=false && npx prisma generate && npm run build
+    preDeployCommand: npx prisma migrate deploy && npm run db:seed
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: restxperience-db
+          property: connectionString
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_SESSION_SECRET
+        generateValue: true
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false

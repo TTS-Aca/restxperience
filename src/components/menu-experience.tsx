@@ -55,14 +55,14 @@ export function MenuExperience({
 
   return (
     <CartProvider storageKey={`rx-cart-${tableToken}`}>
-      <div className="relative min-h-dvh pb-28">
+      <div className="relative mx-auto min-h-dvh w-full max-w-6xl pb-28">
         <div className="atmosphere" aria-hidden />
 
-        <header className="relative px-5 pt-10 pb-6">
+        <header className="relative px-4 pt-8 pb-6 sm:px-5 sm:pt-10">
           <p className="mb-2 text-xs tracking-[0.35em] text-[#c4a574]/80 uppercase">
             {tableLabel}
           </p>
-          <h1 className="font-[family-name:var(--font-display)] text-4xl leading-none text-white sm:text-5xl">
+          <h1 className="font-[family-name:var(--font-display)] text-3xl leading-none text-white sm:text-5xl">
             {restaurantName}
           </h1>
           <p className="mt-3 max-w-md text-sm text-white/55">{tagline}</p>
@@ -83,7 +83,7 @@ export function MenuExperience({
           )}
         </header>
 
-        <div className="relative px-5">
+        <div className="relative px-4 sm:px-5">
           <SessionEmail
             sessionId={sessionId}
             email={email}
@@ -91,7 +91,7 @@ export function MenuExperience({
           />
         </div>
 
-        <nav className="sticky top-0 z-20 mt-4 overflow-x-auto border-y border-white/5 bg-[#1a1614]/70 px-5 py-3 backdrop-blur-xl">
+        <nav className="sticky top-0 z-20 mt-4 overflow-x-auto border-y border-white/5 bg-[#1a1614]/70 px-4 py-3 backdrop-blur-xl sm:px-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-w-max gap-2">
             {categories.map((cat) => (
               <button
@@ -115,7 +115,7 @@ export function MenuExperience({
           </div>
         </nav>
 
-        <main className="relative space-y-10 px-5 pt-6">
+        <main className="relative space-y-10 px-4 pt-6 sm:px-5">
           {categories.map((cat) => (
             <section key={cat.id} id={`cat-${cat.id}`} className="scroll-mt-24">
               <h2 className="mb-4 font-[family-name:var(--font-display)] text-2xl text-white/90">

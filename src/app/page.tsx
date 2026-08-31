@@ -18,11 +18,11 @@ export default async function HomePage() {
   return (
     <div className="relative min-h-dvh overflow-hidden">
       <div className="atmosphere" />
-      <main className="relative mx-auto flex min-h-dvh max-w-3xl flex-col justify-center px-6 py-16">
+      <main className="relative mx-auto flex min-h-dvh max-w-3xl flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
         <p className="mb-4 text-xs tracking-[0.4em] text-[#c4a574]/80 uppercase">
           Menú digital
         </p>
-        <h1 className="font-[family-name:var(--font-display)] text-5xl leading-[0.95] text-white sm:text-6xl">
+        <h1 className="font-[family-name:var(--font-display)] text-4xl leading-[0.95] text-white sm:text-6xl">
           {name}
         </h1>
         <p className="mt-5 max-w-lg text-base leading-relaxed text-white/60">

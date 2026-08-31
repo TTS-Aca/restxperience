@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: restx
+      POSTGRES_PASSWORD: restx
+      POSTGRES_DB: restxperience
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U restx -d restxperience"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    image: node:22-bookworm
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://restx:restx@db:5432/restxperience?schema=public
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-restx-admin}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-rx-session-secret-change-me}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
+      WATCHPACK_POLLING: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      [
+        "sh",
+        "-c",
+        "sed -i 's/\\r$//' ./docker/dev-entrypoint.sh && sh ./docker/dev-entrypoint.sh",
+      ]
+
+  web:
+    profiles: ["prod"]
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://restx:restx@db:5432/restxperience?schema=public
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-rx-session-secret-change-me}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  node_modules:

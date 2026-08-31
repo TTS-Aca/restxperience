@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -71,6 +71,9 @@ model Session {
   reviews        Review[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([tableId, status])
+  @@index([expiresAt])
 }
 
 model Order {
@@ -91,6 +94,9 @@ model Order {
   items            OrderItem[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+
+  @@index([sessionId, status])
+  @@index([createdAt])
 }
 
 model OrderItem {
