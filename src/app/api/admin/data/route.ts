@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { nanoid } from "nanoid";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { slugify } from "@/lib/utils";
@@ -126,6 +127,64 @@ export async function PATCH(req: Request) {
 
   if (type === "product-delete") {
     await prisma.product.delete({ where: { id: String(body.id) } });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (type === "category-create") {
+    const name = String(body.name || "").trim();
+    if (!name) {
+      return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
+    }
+    const last = await prisma.category.findFirst({
+      orderBy: { sortOrder: "desc" },
+    });
+    const category = await prisma.category.create({
+      data: {
+        name,
+        slug: `${slugify(name) || "categoria"}-${Date.now()}`,
+        sortOrder: (last?.sortOrder ?? -1) + 1,
+      },
+    });
+    return NextResponse.json({ category });
+  }
+
+  if (type === "table-create") {
+    const last = await prisma.table.findFirst({ orderBy: { number: "desc" } });
+    const number = body.number ? Number(body.number) : (last?.number ?? 0) + 1;
+    if (!Number.isInteger(number) || number < 1) {
+      return NextResponse.json({ error: "Número de mesa inválido" }, { status: 400 });
+    }
+    const exists = await prisma.table.findUnique({ where: { number } });
+    if (exists) {
+      return NextResponse.json(
+        { error: `Ya existe la mesa ${number}` },
+        { status: 400 }
+      );
+    }
+    const table = await prisma.table.create({
+      data: {
+        number,
+        label: String(body.label || "").trim() || `Mesa ${number}`,
+        token: nanoid(10),
+        active: true,
+      },
+    });
+    return NextResponse.json({ table });
+  }
+
+  if (type === "table-delete") {
+    const id = String(body.id || "");
+    if (!id) {
+      return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    }
+    try {
+      await prisma.table.delete({ where: { id } });
+    } catch {
+      return NextResponse.json(
+        { error: "No se puede eliminar: la mesa ya tiene sesiones." },
+        { status: 400 }
+      );
+    }
     return NextResponse.json({ ok: true });
   }
 

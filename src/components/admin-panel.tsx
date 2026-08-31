@@ -62,6 +62,11 @@ export function AdminPanel({ origin }: { origin: string }) {
   const [filter, setFilter] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [tableNumber, setTableNumber] = useState("");
+  const [tableLabel, setTableLabel] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/data");
@@ -115,19 +120,96 @@ export function AdminPanel({ origin }: { origin: string }) {
     if (res.ok) setMessage("Configuración guardada");
   }
 
-  async function saveProduct(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editing) return;
+  async function patch(body: Record<string, unknown>) {
     const res = await fetch("/api/admin/data", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "product", ...editing }),
+      body: JSON.stringify(body),
     });
-    if (res.ok) {
-      setMessage("Producto actualizado");
+    const data = await res.json();
+    if (!res.ok) {
+      setMessage(data.error || "No se pudo guardar");
+      return false;
+    }
+    return true;
+  }
+
+  function blankProduct(categoryId = categories[0]?.id || ""): Product {
+    return {
+      id: "",
+      name: "",
+      price: 0,
+      description: "",
+      ingredients: "",
+      calories: null,
+      imageUrl: null,
+      videoUrl: null,
+      available: true,
+      categoryId,
+      category: { name: "" },
+    };
+  }
+
+  async function saveProduct(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) return;
+    setBusy(true);
+    const ok = creating
+      ? await patch({ type: "product-create", ...editing })
+      : await patch({ type: "product", ...editing });
+    setBusy(false);
+    if (ok) {
+      setMessage(creating ? "Producto creado" : "Producto actualizado");
       setEditing(null);
+      setCreating(false);
       await load();
     }
+  }
+
+  async function createCategory(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const ok = await patch({ type: "category-create", name: newCategory });
+    setBusy(false);
+    if (ok) {
+      setMessage("Categoría creada");
+      setNewCategory("");
+      await load();
+    }
+  }
+
+  async function createTable(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const ok = await patch({
+      type: "table-create",
+      number: tableNumber ? Number(tableNumber) : undefined,
+      label: tableLabel,
+    });
+    setBusy(false);
+    if (ok) {
+      setMessage("Mesa creada");
+      setTableNumber("");
+      setTableLabel("");
+      await load();
+    }
+  }
+
+  async function createDemoTables() {
+    setBusy(true);
+    let created = 0;
+    for (let n = 1; n <= 8; n++) {
+      if (tables.some((t) => t.number === n)) continue;
+      const ok = await patch({
+        type: "table-create",
+        number: n,
+        label: `Mesa ${n}`,
+      });
+      if (ok) created += 1;
+    }
+    setBusy(false);
+    setMessage(created ? `Se crearon ${created} mesas` : "Esas mesas ya existen");
+    await load();
   }
 
   if (!authed) {
@@ -255,18 +337,60 @@ export function AdminPanel({ origin }: { origin: string }) {
 
         {tab === "products" && (
           <div className="space-y-4">
-            <input
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Buscar producto o categoría…"
-              className="input-glass max-w-md"
-            />
+            <form
+              onSubmit={createCategory}
+              className="admin-card flex flex-col gap-3 sm:flex-row sm:items-end"
+            >
+              <label className="block min-w-0 flex-1 text-xs tracking-wide text-white/40 uppercase">
+                Nueva categoría
+                <input
+                  className="input-glass mt-1"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  placeholder="Ej. Cortes, Bebidas, Postres"
+                  required
+                />
+              </label>
+              <button type="submit" className="btn-primary" disabled={busy}>
+                Crear categoría
+              </button>
+            </form>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <input
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Buscar producto o categoría…"
+                className="input-glass max-w-md"
+              />
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={!categories.length}
+                onClick={() => {
+                  setCreating(true);
+                  setEditing(blankProduct());
+                }}
+              >
+                Nuevo producto
+              </button>
+            </div>
+
+            {!categories.length && (
+              <p className="text-sm text-white/45">
+                Primero crea una categoría. Luego ya puedes agregar platillos.
+              </p>
+            )}
+
             <div className="grid gap-2">
               {filtered.map((p) => (
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => setEditing(p)}
+                  onClick={() => {
+                    setCreating(false);
+                    setEditing(p);
+                  }}
                   className="admin-card flex items-center justify-between gap-3 text-left transition hover:bg-white/8"
                 >
                   <div className="min-w-0">
@@ -283,25 +407,47 @@ export function AdminPanel({ origin }: { origin: string }) {
               ))}
             </div>
 
+            {!products.length && categories.length > 0 && !editing && (
+              <p className="text-white/40">Aún no hay productos.</p>
+            )}
+
             {editing && (
               <form
                 onSubmit={saveProduct}
                 className="admin-card sticky bottom-4 space-y-3 border-[#c4a574]/30"
               >
                 <h3 className="font-[family-name:var(--font-display)] text-2xl">
-                  Editar producto
+                  {creating ? "Nuevo producto" : "Editar producto"}
                 </h3>
+                <select
+                  className="input-glass"
+                  value={editing.categoryId}
+                  onChange={(e) =>
+                    setEditing({ ...editing, categoryId: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">Categoría</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
                 <input
                   className="input-glass"
+                  placeholder="Nombre"
                   value={editing.name}
                   onChange={(e) =>
                     setEditing({ ...editing, name: e.target.value })
                   }
+                  required
                 />
                 <input
                   type="number"
                   step="0.01"
                   className="input-glass"
+                  placeholder="Precio"
                   value={editing.price}
                   onChange={(e) =>
                     setEditing({ ...editing, price: Number(e.target.value) })
@@ -364,17 +510,43 @@ export function AdminPanel({ origin }: { origin: string }) {
                   />
                   Disponible en menú
                 </label>
-                <div className="flex gap-2">
-                  <button type="submit" className="btn-primary">
-                    Guardar
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" className="btn-primary" disabled={busy}>
+                    {creating ? "Crear" : "Guardar"}
                   </button>
                   <button
                     type="button"
                     className="btn-ghost"
-                    onClick={() => setEditing(null)}
+                    onClick={() => {
+                      setEditing(null);
+                      setCreating(false);
+                    }}
                   >
                     Cancelar
                   </button>
+                  {!creating && (
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      disabled={busy}
+                      onClick={async () => {
+                        if (!confirm("¿Eliminar este producto?")) return;
+                        setBusy(true);
+                        const ok = await patch({
+                          type: "product-delete",
+                          id: editing.id,
+                        });
+                        setBusy(false);
+                        if (ok) {
+                          setEditing(null);
+                          setMessage("Producto eliminado");
+                          await load();
+                        }
+                      }}
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </div>
               </form>
             )}
@@ -382,36 +554,108 @@ export function AdminPanel({ origin }: { origin: string }) {
         )}
 
         {tab === "tables" && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {tables.map((t) => {
-              const url = `${origin}/mesa/${t.token}`;
-              const qr = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
-              return (
-                <article key={t.id} className="admin-card text-center">
-                  <p className="font-[family-name:var(--font-display)] text-2xl">
-                    {t.label}
-                  </p>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={qr}
-                    alt={`QR ${t.label}`}
-                    className="mx-auto mt-3 rounded-xl bg-white p-2"
-                    width={180}
-                    height={180}
-                  />
-                  <p className="mt-3 break-all text-xs text-white/40">{url}</p>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-ghost mt-3 inline-flex text-sm"
-                  >
-                    Abrir mesa
-                  </a>
-                </article>
-              );
-            })}
+          <div className="space-y-4">
+            <form
+              onSubmit={createTable}
+              className="admin-card grid gap-3 sm:grid-cols-[8rem_1fr_auto] sm:items-end"
+            >
+              <label className="block text-xs tracking-wide text-white/40 uppercase">
+                Número
+                <input
+                  type="number"
+                  min={1}
+                  className="input-glass mt-1"
+                  value={tableNumber}
+                  onChange={(e) => setTableNumber(e.target.value)}
+                  placeholder="Auto"
+                />
+              </label>
+              <label className="block text-xs tracking-wide text-white/40 uppercase">
+                Etiqueta
+                <input
+                  className="input-glass mt-1"
+                  value={tableLabel}
+                  onChange={(e) => setTableLabel(e.target.value)}
+                  placeholder="Mesa 1"
+                />
+              </label>
+              <button type="submit" className="btn-primary" disabled={busy}>
+                Crear mesa
+              </button>
+            </form>
+            <button
+              type="button"
+              className="btn-ghost"
+              disabled={busy}
+              onClick={() => void createDemoTables()}
+            >
+              Crear mesas 1 a 8
+            </button>
+
+            {!tables.length && (
+              <p className="text-sm text-white/45">
+                No hay mesas. Crea una o genera las 8 de demo para ver QR y
+                abrir el menú.
+              </p>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {tables.map((t) => {
+                const url = `${origin}/mesa/${t.token}`;
+                const qr = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
+                return (
+                  <article key={t.id} className="admin-card text-center">
+                    <p className="font-[family-name:var(--font-display)] text-2xl">
+                      {t.label}
+                    </p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qr}
+                      alt={`QR ${t.label}`}
+                      className="mx-auto mt-3 rounded-xl bg-white p-2"
+                      width={180}
+                      height={180}
+                    />
+                    <p className="mt-3 break-all text-xs text-white/40">{url}</p>
+                    <div className="mt-3 flex flex-wrap justify-center gap-2">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-ghost inline-flex text-sm"
+                      >
+                        Abrir mesa
+                      </a>
+                      <button
+                        type="button"
+                        className="btn-ghost text-sm"
+                        disabled={busy}
+                        onClick={async () => {
+                          if (!confirm(`¿Eliminar ${t.label}?`)) return;
+                          setBusy(true);
+                          const ok = await patch({
+                            type: "table-delete",
+                            id: t.id,
+                          });
+                          setBusy(false);
+                          if (ok) {
+                            setMessage("Mesa eliminada");
+                            await load();
+                          }
+                        }}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </div>
+        )}
+
+        {tab === "settings" && !settings && (
+          <p className="text-white/40">Cargando configuración…</p>
         )}
 
         {tab === "settings" && settings && (
