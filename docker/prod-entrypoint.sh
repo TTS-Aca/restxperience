@@ -17,8 +17,8 @@ else
   node ./node_modules/prisma/build/index.js migrate deploy
 fi
 
-if [ -f ./prisma/seed.cjs ]; then
-  node ./prisma/seed.cjs
+if [ -f ./node_modules/tsx/dist/cli.mjs ]; then
+  node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts || echo "Seed omitido (el sitio igual arranca)."
 fi
 
 exec node server.js

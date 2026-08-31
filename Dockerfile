@@ -15,7 +15,6 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
 RUN npx prisma generate
-RUN node ./node_modules/esbuild/bin/esbuild prisma/seed.ts --bundle --platform=node --format=cjs --outfile=prisma/seed.cjs --external:@prisma/client
 RUN npm run build
 
 FROM base AS runner
@@ -34,6 +33,10 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
+COPY --from=builder /app/node_modules/esbuild ./node_modules/esbuild
+COPY --from=builder /app/node_modules/nanoid ./node_modules/nanoid
+COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
 COPY docker/prod-entrypoint.sh ./docker/prod-entrypoint.sh
 
 RUN sed -i 's/\r$//' ./docker/prod-entrypoint.sh \
