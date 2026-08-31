@@ -6,12 +6,14 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json ./
+COPY prisma ./prisma
 RUN npm ci
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
 RUN npx prisma generate
 RUN npm run build
 
@@ -33,9 +35,10 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY docker/prod-entrypoint.sh ./docker/prod-entrypoint.sh
 
-RUN chmod +x ./docker/prod-entrypoint.sh \
+RUN sed -i 's/\r$//' ./docker/prod-entrypoint.sh \
+  && chmod +x ./docker/prod-entrypoint.sh \
   && chown -R nextjs:nodejs /app
 
 USER nextjs
 EXPOSE 3000
-ENTRYPOINT ["./docker/prod-entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "./docker/prod-entrypoint.sh"]

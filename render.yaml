@@ -8,12 +8,11 @@ databases:
 services:
   - type: web
     name: restxperience
-    runtime: node
+    runtime: docker
     plan: free
     region: oregon
-    buildCommand: npm install --production=false && npx prisma generate && npm run build
-    preDeployCommand: npx prisma migrate deploy && npm run db:seed
-    startCommand: npm start
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
