@@ -15,6 +15,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
 RUN npx prisma generate
+RUN node ./node_modules/esbuild/bin/esbuild prisma/seed.ts --bundle --platform=node --format=cjs --outfile=prisma/seed.cjs --external:@prisma/client
 RUN npm run build
 
 FROM base AS runner
