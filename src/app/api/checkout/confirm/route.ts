@@ -86,6 +86,6 @@ export async function POST(req: Request) {
     status: result.order.status,
     comandaSent: result.order.comandaSent,
     table: result.order.session.table.label,
-    message: "Pago confirmado. La comanda ya fue enviada a tu mesa.",
+    message: "Pago confirmado. Tu pedido va a cocina. Podrás calificar cuando te lo sirvan.",
   });
 }

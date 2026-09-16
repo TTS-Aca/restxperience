@@ -85,7 +85,7 @@ export function PaymentReturn({ tableToken }: { tableToken: string }) {
             setStatus("ok");
             setMessage(
               data.message ||
-                "Pago confirmado. La comanda ya va camino a tu mesa."
+                "Pago confirmado. Tu pedido va a cocina. Podrás calificar cuando te lo sirvan."
             );
             return;
           }

@@ -7,7 +7,7 @@ import { CartDrawer } from "./cart-drawer";
 import { CartProvider } from "./cart-provider";
 import { ChatBot } from "./chat-bot";
 import { ProductCard, type MenuProduct } from "./product-card";
-import { ReviewPanel } from "./review-panel";
+import { RateYourOrderPanel } from "./rate-your-order-panel";
 import { SessionEmail } from "./session-email";
 
 type CategoryBlock = {
@@ -28,7 +28,6 @@ export function MenuExperience({
   commerceMode,
   dishOfDayName,
   categories,
-  canReview,
   expiresAt,
 }: {
   tableLabel: string;
@@ -42,7 +41,6 @@ export function MenuExperience({
   commerceMode: CommerceMode;
   dishOfDayName: string | null;
   categories: CategoryBlock[];
-  canReview: boolean;
   expiresAt: string | null;
 }) {
   const [active, setActive] = useState(categories[0]?.id || "");
@@ -127,7 +125,6 @@ export function MenuExperience({
                     key={product.id}
                     product={product}
                     currency={currency}
-                    guestEmail={email}
                     orderingEnabled={ordering}
                   />
                 ))}
@@ -135,8 +132,8 @@ export function MenuExperience({
             </section>
           ))}
 
-          {canReview && (
-            <ReviewPanel sessionId={sessionId} email={email} />
+          {ordering && (
+            <RateYourOrderPanel sessionId={sessionId} email={email} />
           )}
 
           {!flat.length && (

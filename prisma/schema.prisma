@@ -91,6 +91,7 @@ model Order {
   /// true solo después de pago confirmado → comanda a mesa
   comandaSent      Boolean     @default(false)
   paidAt           DateTime?
+  servedAt         DateTime?
   items            OrderItem[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -116,9 +117,11 @@ model Rating {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   email     String
   stars     Int
+  comment   String   @default("")
   createdAt DateTime @default(now())
 
   @@unique([productId, email])
+  @@index([productId, createdAt])
 }
 
 model Review {

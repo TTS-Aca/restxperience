@@ -27,9 +27,23 @@ services:
         sync: false
       - key: ADMIN_SESSION_SECRET
         generateValue: true
+      - key: KITCHEN_PASSWORD
+        sync: false
+      - key: KITCHEN_SESSION_SECRET
+        generateValue: true
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        value: restxperience-media
+      - key: R2_PUBLIC_BASE_URL
         sync: false

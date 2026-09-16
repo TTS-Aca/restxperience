@@ -49,6 +49,10 @@ next-env.d.ts
 *.db
 *.db-journal
 
+# uploaded media (keep folder via .gitkeep)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 # prisma agent skill noise
 .claude/
 .windsurf/

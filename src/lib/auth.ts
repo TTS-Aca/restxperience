@@ -74,3 +74,43 @@ export async function isAdminAuthenticated() {
   const value = jar.get(ADMIN_COOKIE)?.value;
   return value === (process.env.ADMIN_SESSION_SECRET || "rx-session-ok");
 }
+
+const KITCHEN_COOKIE = "rx_kitchen";
+const DEFAULT_KITCHEN_PASSWORD = "restx-kitchen";
+
+function envKitchenPassword() {
+  const value = process.env.KITCHEN_PASSWORD?.trim();
+  return value || DEFAULT_KITCHEN_PASSWORD;
+}
+
+function kitchenSessionSecret() {
+  return process.env.KITCHEN_SESSION_SECRET || "rx-kitchen-session-secret";
+}
+
+export function verifyKitchenPassword(password: string) {
+  const typed = password.trim();
+  if (!typed) return false;
+  return typed === envKitchenPassword();
+}
+
+export async function setKitchenSession() {
+  const jar = await cookies();
+  jar.set(KITCHEN_COOKIE, kitchenSessionSecret(), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 12,
+  });
+}
+
+export async function clearKitchenSession() {
+  const jar = await cookies();
+  jar.delete(KITCHEN_COOKIE);
+}
+
+export async function isKitchenAuthenticated() {
+  const jar = await cookies();
+  const value = jar.get(KITCHEN_COOKIE)?.value;
+  return value === kitchenSessionSecret();
+}

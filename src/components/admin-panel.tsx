@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { formatPrice } from "@/lib/utils";
+import { ProductEditorModal } from "@/components/product-editor-modal";
+import { MENU_CSV_TEMPLATE } from "@/lib/menu-csv";
+import {
+  getVideoDurationFromFile,
+  isVideoDurationAllowed,
+  videoDurationError,
+} from "@/lib/video-duration";
 
 type Product = {
   id: string;
@@ -31,6 +38,7 @@ type Settings = {
   commerceMode: "menu_only" | "stripe" | "softrestaurant";
   softRestaurantEndpoint: string | null;
   dishOfDayId: string | null;
+  currency: string;
 };
 
 type Order = {
@@ -41,21 +49,38 @@ type Order = {
   comandaSent: boolean;
   softRestaurantId: string | null;
   createdAt: string;
+  servedAt: string | null;
   guestEmail: string | null;
   items: { name: string; quantity: number; unitPrice: number }[];
   session: { table: { label: string; number: number } };
 };
 
+type Analytics = {
+  today: { revenue: number; orderCount: number; avgTicket: number };
+  week: { revenue: number; orderCount: number; avgTicket: number };
+  month: { revenue: number; orderCount: number; avgTicket: number };
+  topProducts: { name: string; quantity: number; revenue: number }[];
+  recentOrders: {
+    id: string;
+    total: number;
+    tableLabel: string;
+    paidAt: string | null;
+    servedAt: string | null;
+    itemCount: number;
+  }[];
+};
+
 export function AdminPanel({ origin }: { origin: string }) {
   const [authed, setAuthed] = useState(false);
   const [password, setPassword] = useState("");
-  const [tab, setTab] = useState<"settings" | "products" | "tables" | "orders">(
-    "orders"
-  );
+  const [tab, setTab] = useState<
+    "summary" | "orders" | "products" | "tables" | "settings"
+  >("summary");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
     []
   );
@@ -67,6 +92,7 @@ export function AdminPanel({ origin }: { origin: string }) {
   const [tableNumber, setTableNumber] = useState("");
   const [tableLabel, setTableLabel] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState<"image" | "video" | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/data");
@@ -80,6 +106,7 @@ export function AdminPanel({ origin }: { origin: string }) {
     setProducts(data.products);
     setTables(data.tables);
     setOrders(data.orders);
+    setAnalytics(data.analytics);
     setCategories(data.categories);
   }, []);
 
@@ -93,6 +120,23 @@ export function AdminPanel({ origin }: { origin: string }) {
         }
       });
   }, [load]);
+
+  useEffect(() => {
+    if (!editing) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setEditing(null);
+        setCreating(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [editing]);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -160,10 +204,62 @@ export function AdminPanel({ origin }: { origin: string }) {
     setBusy(false);
     if (ok) {
       setMessage(creating ? "Producto creado" : "Producto actualizado");
-      setEditing(null);
-      setCreating(false);
+      closeEditor();
       await load();
     }
+  }
+
+  async function uploadMedia(file: File, kind: "image" | "video") {
+    setUploading(kind);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("kind", kind);
+
+      if (kind === "video") {
+        let duration: number;
+        try {
+          duration = await getVideoDurationFromFile(file);
+        } catch {
+          setMessage("No se pudo leer la duración del video.");
+          return null;
+        }
+        if (!isVideoDurationAllowed(duration)) {
+          setMessage(videoDurationError());
+          return null;
+        }
+        formData.append("duration", String(duration));
+      }
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.error || "No se pudo subir el archivo");
+        return null;
+      }
+      setMessage(kind === "video" ? "Video subido" : "Imagen subida");
+      return data.url as string;
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  function selectProduct(p: Product) {
+    setCreating(false);
+    setEditing({ ...p });
+  }
+
+  function startCreateProduct() {
+    setCreating(true);
+    setEditing(blankProduct());
+  }
+
+  function closeEditor() {
+    setEditing(null);
+    setCreating(false);
   }
 
   async function createCategory(e: React.FormEvent) {
@@ -276,6 +372,7 @@ export function AdminPanel({ origin }: { origin: string }) {
         <div className="mb-6 flex flex-wrap gap-2">
           {(
             [
+              ["summary", "Resumen"],
               ["orders", "Pedidos"],
               ["products", "Productos"],
               ["tables", "Mesas / QR"],
@@ -294,6 +391,92 @@ export function AdminPanel({ origin }: { origin: string }) {
             </button>
           ))}
         </div>
+
+        {tab === "summary" && analytics && settings && (
+          <div className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-3">
+              {(
+                [
+                  ["Hoy", analytics.today],
+                  ["7 días", analytics.week],
+                  ["30 días", analytics.month],
+                ] as const
+              ).map(([label, stats]) => (
+                <article key={label} className="admin-card">
+                  <p className="text-xs tracking-wide text-white/40 uppercase">
+                    {label}
+                  </p>
+                  <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-[#e8d5b5]">
+                    {formatPrice(stats.revenue, settings.currency)}
+                  </p>
+                  <p className="mt-1 text-sm text-white/50">
+                    {stats.orderCount} pedidos · ticket{" "}
+                    {formatPrice(stats.avgTicket, settings.currency)}
+                  </p>
+                </article>
+              ))}
+            </div>
+
+            {analytics.topProducts.length > 0 && (
+              <article className="admin-card">
+                <h2 className="mb-4 font-[family-name:var(--font-display)] text-xl text-white">
+                  Platillos más vendidos (30 días)
+                </h2>
+                <ul className="space-y-2">
+                  {analytics.topProducts.map((p) => (
+                    <li
+                      key={p.name}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span className="text-white/80">
+                        {p.name}{" "}
+                        <span className="text-white/40">×{p.quantity}</span>
+                      </span>
+                      <span className="text-[#c4a574]">
+                        {formatPrice(p.revenue, settings.currency)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            )}
+
+            {analytics.recentOrders.length > 0 && (
+              <article className="admin-card">
+                <h2 className="mb-4 font-[family-name:var(--font-display)] text-xl text-white">
+                  Pedidos recientes
+                </h2>
+                <ul className="space-y-2 text-sm">
+                  {analytics.recentOrders.map((o) => (
+                    <li
+                      key={o.id}
+                      className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2 last:border-0"
+                    >
+                      <span className="text-white/80">
+                        {o.tableLabel} · {o.itemCount} platillos
+                        {o.servedAt ? " · servido" : " · en cocina"}
+                      </span>
+                      <span className="text-[#c4a574]">
+                        {formatPrice(o.total, settings.currency)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            )}
+
+            {!analytics.month.orderCount && (
+              <p className="text-white/40">
+                Aún no hay ventas registradas. Los ingresos aparecen cuando los
+                comensales pagan.
+              </p>
+            )}
+          </div>
+        )}
+
+        {tab === "summary" && !analytics && (
+          <p className="text-white/40">Cargando resumen…</p>
+        )}
 
         {tab === "orders" && (
           <div className="space-y-3">
@@ -322,6 +505,22 @@ export function AdminPanel({ origin }: { origin: string }) {
                     </li>
                   ))}
                 </ul>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {o.status === "paid" && o.servedAt && (
+                    <span className="rounded-full bg-[#c4a574]/15 px-3 py-1 text-xs text-[#e8d5b5]">
+                      Servido ·{" "}
+                      {new Date(o.servedAt).toLocaleString("es-MX", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                  )}
+                  {o.status === "paid" && !o.servedAt && (
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
+                      En cocina
+                    </span>
+                  )}
+                </div>
                 {o.softRestaurantId && (
                   <p className="mt-2 text-xs text-white/40">
                     SoftRestaurant: {o.softRestaurantId}
@@ -356,6 +555,70 @@ export function AdminPanel({ origin }: { origin: string }) {
               </button>
             </form>
 
+            <div className="admin-card space-y-3">
+              <p className="text-xs tracking-wide text-white/40 uppercase">
+                Importar menú CSV
+              </p>
+              <p className="text-sm text-white/55">
+                Fotografía el menú, extrae filas a CSV y súbelo aquí. Después
+                solo agregas foto o video a cada platillo. Si el nombre ya
+                existe en esa categoría, se actualiza precio y texto; las
+                imágenes no se tocan.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="btn-ghost text-sm"
+                  onClick={() => {
+                    const blob = new Blob([MENU_CSV_TEMPLATE], {
+                      type: "text/csv;charset=utf-8",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "menu-restxperience.csv";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  Descargar plantilla
+                </button>
+                <label className="btn-primary cursor-pointer text-sm">
+                  {busy ? "Importando…" : "Subir CSV"}
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    disabled={busy}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const csv = await file.text();
+                      setBusy(true);
+                      const res = await fetch("/api/admin/data", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ type: "menu-csv-import", csv }),
+                      });
+                      const data = await res.json();
+                      setBusy(false);
+                      e.target.value = "";
+                      if (!res.ok) {
+                        setMessage(data.error || "No se pudo importar el CSV");
+                        return;
+                      }
+                      setMessage(
+                        `Menú importado: ${data.created} nuevos, ${data.updated} actualizados${
+                          data.skipped ? `, ${data.skipped} filas con error` : ""
+                        }.`
+                      );
+                      await load();
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <input
                 value={filter}
@@ -367,10 +630,7 @@ export function AdminPanel({ origin }: { origin: string }) {
                 type="button"
                 className="btn-primary"
                 disabled={!categories.length}
-                onClick={() => {
-                  setCreating(true);
-                  setEditing(blankProduct());
-                }}
+                onClick={startCreateProduct}
               >
                 Nuevo producto
               </button>
@@ -382,173 +642,54 @@ export function AdminPanel({ origin }: { origin: string }) {
               </p>
             )}
 
+            {!editing && categories.length > 0 && (
+              <p className="text-sm text-white/45">
+                Toca un producto para editarlo en la ventana emergente.
+              </p>
+            )}
+
             <div className="grid gap-2">
               {filtered.map((p) => (
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => {
-                    setCreating(false);
-                    setEditing(p);
-                  }}
-                  className="admin-card flex items-center justify-between gap-3 text-left transition hover:bg-white/8"
+                  onClick={() => selectProduct(p)}
+                  className="admin-card flex items-center gap-3 text-left transition hover:bg-white/8"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{p.name}</p>
-                    <p className="text-xs text-white/40">
-                      {p.category.name}
-                      {!p.available ? " · oculto" : ""}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-[#c4a574]">
-                    {formatPrice(p.price)}
-                  </span>
-                </button>
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/5">
+                      {p.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={p.imageUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-lg text-white/20">◇</span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{p.name}</p>
+                      <p className="text-xs text-white/40">
+                        {p.category.name}
+                        {!p.available ? " · oculto" : ""}
+                        {p.videoUrl ? " · video" : ""}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <span className="text-[#c4a574]">
+                        {formatPrice(p.price)}
+                      </span>
+                      <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/50">
+                        Editar
+                      </span>
+                    </div>
+                  </button>
               ))}
             </div>
 
             {!products.length && categories.length > 0 && !editing && (
               <p className="text-white/40">Aún no hay productos.</p>
-            )}
-
-            {editing && (
-              <form
-                onSubmit={saveProduct}
-                className="admin-card sticky bottom-4 space-y-3 border-[#c4a574]/30"
-              >
-                <h3 className="font-[family-name:var(--font-display)] text-2xl">
-                  {creating ? "Nuevo producto" : "Editar producto"}
-                </h3>
-                <select
-                  className="input-glass"
-                  value={editing.categoryId}
-                  onChange={(e) =>
-                    setEditing({ ...editing, categoryId: e.target.value })
-                  }
-                  required
-                >
-                  <option value="">Categoría</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  className="input-glass"
-                  placeholder="Nombre"
-                  value={editing.name}
-                  onChange={(e) =>
-                    setEditing({ ...editing, name: e.target.value })
-                  }
-                  required
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  className="input-glass"
-                  placeholder="Precio"
-                  value={editing.price}
-                  onChange={(e) =>
-                    setEditing({ ...editing, price: Number(e.target.value) })
-                  }
-                />
-                <textarea
-                  className="input-glass"
-                  rows={2}
-                  placeholder="Descripción"
-                  value={editing.description}
-                  onChange={(e) =>
-                    setEditing({ ...editing, description: e.target.value })
-                  }
-                />
-                <textarea
-                  className="input-glass"
-                  rows={2}
-                  placeholder="Ingredientes"
-                  value={editing.ingredients}
-                  onChange={(e) =>
-                    setEditing({ ...editing, ingredients: e.target.value })
-                  }
-                />
-                <input
-                  type="number"
-                  className="input-glass"
-                  placeholder="Calorías"
-                  value={editing.calories ?? ""}
-                  onChange={(e) =>
-                    setEditing({
-                      ...editing,
-                      calories:
-                        e.target.value === "" ? null : Number(e.target.value),
-                    })
-                  }
-                />
-                <input
-                  className="input-glass"
-                  placeholder="URL imagen"
-                  value={editing.imageUrl || ""}
-                  onChange={(e) =>
-                    setEditing({ ...editing, imageUrl: e.target.value })
-                  }
-                />
-                <input
-                  className="input-glass"
-                  placeholder="URL video"
-                  value={editing.videoUrl || ""}
-                  onChange={(e) =>
-                    setEditing({ ...editing, videoUrl: e.target.value })
-                  }
-                />
-                <label className="flex items-center gap-2 text-sm text-white/70">
-                  <input
-                    type="checkbox"
-                    checked={editing.available}
-                    onChange={(e) =>
-                      setEditing({ ...editing, available: e.target.checked })
-                    }
-                  />
-                  Disponible en menú
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <button type="submit" className="btn-primary" disabled={busy}>
-                    {creating ? "Crear" : "Guardar"}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-ghost"
-                    onClick={() => {
-                      setEditing(null);
-                      setCreating(false);
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                  {!creating && (
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      disabled={busy}
-                      onClick={async () => {
-                        if (!confirm("¿Eliminar este producto?")) return;
-                        setBusy(true);
-                        const ok = await patch({
-                          type: "product-delete",
-                          id: editing.id,
-                        });
-                        setBusy(false);
-                        if (ok) {
-                          setEditing(null);
-                          setMessage("Producto eliminado");
-                          await load();
-                        }
-                      }}
-                    >
-                      Eliminar
-                    </button>
-                  )}
-                </div>
-              </form>
             )}
           </div>
         )}
@@ -767,6 +908,35 @@ export function AdminPanel({ origin }: { origin: string }) {
               Guardar configuración
             </button>
           </form>
+        )}
+
+        {editing && (
+          <ProductEditorModal
+            open
+            creating={creating}
+            product={editing}
+            categories={categories}
+            busy={busy}
+            uploading={uploading}
+            onClose={closeEditor}
+            onChange={setEditing}
+            onSave={saveProduct}
+            onDelete={async () => {
+              if (!confirm("¿Eliminar este producto?")) return;
+              setBusy(true);
+              const ok = await patch({
+                type: "product-delete",
+                id: editing.id,
+              });
+              setBusy(false);
+              if (ok) {
+                closeEditor();
+                setMessage("Producto eliminado");
+                await load();
+              }
+            }}
+            onUpload={uploadMedia}
+          />
         )}
       </div>
     </div>

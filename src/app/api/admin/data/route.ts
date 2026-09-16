@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { isAdminAuthenticated } from "@/lib/auth";
+import { getAdminAnalytics } from "@/lib/analytics";
 import { prisma } from "@/lib/db";
 import { slugify } from "@/lib/utils";
 
@@ -15,7 +16,7 @@ export async function GET() {
   const denied = await guard();
   if (denied) return denied;
 
-  const [settings, categories, products, tables, orders, reviews] =
+  const [settings, categories, products, tables, orders, reviews, analytics] =
     await Promise.all([
       prisma.settings.findUnique({ where: { id: "default" } }),
       prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
@@ -30,13 +31,14 @@ export async function GET() {
           session: { include: { table: true } },
         },
         orderBy: { createdAt: "desc" },
-        take: 40,
+        take: 100,
       }),
       prisma.review.findMany({
         include: { session: { include: { table: true } } },
         orderBy: { createdAt: "desc" },
         take: 30,
       }),
+      getAdminAnalytics(),
     ]);
 
   return NextResponse.json({
@@ -46,6 +48,7 @@ export async function GET() {
     tables,
     orders,
     reviews,
+    analytics,
   });
 }
 
@@ -80,6 +83,7 @@ export async function PATCH(req: Request) {
     if (!id) {
       return NextResponse.json({ error: "id requerido" }, { status: 400 });
     }
+    const categoryId = body.categoryId ? String(body.categoryId) : undefined;
     const product = await prisma.product.update({
       where: { id },
       data: {
@@ -93,7 +97,9 @@ export async function PATCH(req: Request) {
             : Number(body.calories),
         imageUrl: body.imageUrl || null,
         videoUrl: body.videoUrl || null,
-        available: body.available !== undefined ? Boolean(body.available) : undefined,
+        available:
+          body.available !== undefined ? Boolean(body.available) : undefined,
+        ...(categoryId ? { categoryId } : {}),
       },
     });
     return NextResponse.json({ product });
@@ -120,6 +126,8 @@ export async function PATCH(req: Request) {
         categoryId,
         imageUrl: body.imageUrl || null,
         videoUrl: body.videoUrl || null,
+        available:
+          body.available !== undefined ? Boolean(body.available) : true,
       },
     });
     return NextResponse.json({ product });
@@ -186,6 +194,88 @@ export async function PATCH(req: Request) {
       );
     }
     return NextResponse.json({ ok: true });
+  }
+
+  if (type === "menu-csv-import") {
+    const { parseMenuCsv } = await import("@/lib/menu-csv");
+    const csv = String(body.csv || "");
+    const { rows, errors } = parseMenuCsv(csv);
+    if (!rows.length) {
+      return NextResponse.json(
+        { error: errors[0] || "No hay filas válidas", errors },
+        { status: 400 }
+      );
+    }
+
+    const existingCategories = await prisma.category.findMany();
+    const categoryByName = new Map(
+      existingCategories.map((c) => [c.name.trim().toLowerCase(), c])
+    );
+    let lastSort = existingCategories.reduce(
+      (max, c) => Math.max(max, c.sortOrder),
+      -1
+    );
+
+    let created = 0;
+    let updated = 0;
+
+    for (const row of rows) {
+      const key = row.category.trim().toLowerCase();
+      let category = categoryByName.get(key);
+      if (!category) {
+        lastSort += 1;
+        category = await prisma.category.create({
+          data: {
+            name: row.category.trim(),
+            slug: `${slugify(row.category) || "categoria"}-${Date.now()}`,
+            sortOrder: lastSort,
+          },
+        });
+        categoryByName.set(key, category);
+      }
+
+      const existing = await prisma.product.findFirst({
+        where: {
+          categoryId: category.id,
+          name: { equals: row.name, mode: "insensitive" },
+        },
+      });
+
+      if (existing) {
+        await prisma.product.update({
+          where: { id: existing.id },
+          data: {
+            price: row.price,
+            description: row.description,
+            ingredients: row.ingredients,
+            calories: row.calories,
+          },
+        });
+        updated += 1;
+      } else {
+        await prisma.product.create({
+          data: {
+            name: row.name,
+            slug: `${slugify(row.name) || "producto"}-${Date.now()}-${created}`,
+            price: row.price,
+            description: row.description,
+            ingredients: row.ingredients,
+            calories: row.calories,
+            categoryId: category.id,
+            available: true,
+          },
+        });
+        created += 1;
+      }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      created,
+      updated,
+      skipped: errors.length,
+      errors,
+    });
   }
 
   return NextResponse.json({ error: "Tipo desconocido" }, { status: 400 });

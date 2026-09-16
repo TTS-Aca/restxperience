@@ -2,9 +2,15 @@
 
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "./cart-provider";
+
+export type ProductOpinion = {
+  stars: number;
+  comment: string;
+  createdAt: string;
+};
 
 export type MenuProduct = {
   id: string;
@@ -17,46 +23,48 @@ export type MenuProduct = {
   videoUrl: string | null;
   avgStars: number;
   ratingCount: number;
+  recentOpinions: ProductOpinion[];
 };
 
 export function ProductCard({
   product,
   currency,
-  guestEmail,
   orderingEnabled = true,
 }: {
   product: MenuProduct;
   currency: string;
-  guestEmail?: string | null;
   orderingEnabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [stars, setStars] = useState(0);
-  const [rated, setRated] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [opinions, setOpinions] = useState(product.recentOpinions);
+  const [showOpinions, setShowOpinions] = useState(false);
+  const [loadingOpinions, setLoadingOpinions] = useState(false);
   const { addItem } = useCart();
 
-  async function submitRating(value: number) {
-    if (!guestEmail) {
-      alert("Guarda tu correo en la sesión para calificar.");
-      return;
-    }
-    setStars(value);
-    setBusy(true);
+  useEffect(() => {
+    setOpinions(product.recentOpinions);
+  }, [product.recentOpinions]);
+
+  async function loadOpinions() {
+    if (loadingOpinions) return;
+    setLoadingOpinions(true);
     try {
-      const res = await fetch("/api/ratings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: product.id,
-          email: guestEmail,
-          stars: value,
-        }),
-      });
-      if (res.ok) setRated(true);
+      const res = await fetch(
+        `/api/ratings?productId=${encodeURIComponent(product.id)}&limit=3`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setOpinions(data.opinions || []);
+      }
     } finally {
-      setBusy(false);
+      setLoadingOpinions(false);
     }
+  }
+
+  async function toggleOpinions() {
+    const next = !showOpinions;
+    setShowOpinions(next);
+    if (next && !opinions.length) await loadOpinions();
   }
 
   return (
@@ -110,7 +118,7 @@ export function ProductCard({
       </button>
 
       <div className="space-y-3 p-4">
-          <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1 text-[#c4a574]">
             {Array.from({ length: 5 }).map((_, i) => (
               <Star
@@ -173,34 +181,47 @@ export function ProductCard({
             )}
 
             <div>
-              <p className="mb-2 text-xs tracking-wide text-white/40 uppercase">
-                Tu calificación
-              </p>
-              <div className="flex gap-1">
-                {Array.from({ length: 5 }).map((_, i) => {
-                  const value = i + 1;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      disabled={busy || rated}
-                      onClick={() => submitRating(value)}
-                      className="p-0.5"
-                      aria-label={`${value} estrellas`}
+              <button
+                type="button"
+                onClick={() => void toggleOpinions()}
+                className="text-xs tracking-wide text-[#c4a574] uppercase"
+              >
+                {showOpinions ? "Ocultar opiniones" : "Ver opiniones recientes"}
+              </button>
+              {showOpinions && (
+                <div className="mt-3 space-y-2">
+                  {loadingOpinions && (
+                    <p className="text-xs text-white/40">Cargando…</p>
+                  )}
+                  {!loadingOpinions && !opinions.length && (
+                    <p className="text-xs text-white/40">
+                      Aún no hay opiniones para este platillo.
+                    </p>
+                  )}
+                  {opinions.map((opinion, i) => (
+                    <article
+                      key={`${opinion.createdAt}-${i}`}
+                      className="rounded-xl border border-white/8 bg-white/4 p-3"
                     >
-                      <Star
-                        className={`h-5 w-5 ${
-                          value <= stars
-                            ? "fill-[#c4a574] text-[#c4a574]"
-                            : "text-white/30"
-                        }`}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-              {rated && (
-                <p className="mt-1 text-xs text-[#c4a574]">¡Gracias por tu voto!</p>
+                      <div className="mb-1 flex gap-0.5 text-[#c4a574]">
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <Star
+                            key={j}
+                            className={`h-3 w-3 ${
+                              j < opinion.stars
+                                ? "fill-current"
+                                : "opacity-30"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm text-white/75">{opinion.comment}</p>
+                      <p className="mt-1 text-[10px] text-white/30">
+                        {new Date(opinion.createdAt).toLocaleDateString("es-MX")}
+                      </p>
+                    </article>
+                  ))}
+                </div>
               )}
             </div>
           </motion.div>

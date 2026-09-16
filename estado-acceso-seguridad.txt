@@ -1,0 +1,231 @@
+RestXperience — estado, acceso, CSV en deploy y seguridad
+=========================================================
+Fecha de este documento: 2026-09-11
+Un solo local por instancia (aun NO es SaaS multi-tenant).
+
+
+1. COMO VA EL PROYECTO
+----------------------
+LISTO (funciona en Docker local)
+  - Menu de comensal por QR: /mesa/[token]
+  - Carrito + pago (Stripe si hay keys; si no, modo demo)
+  - Cocina: /rx-cocina  (comandas pagadas, marcar servido)
+  - Admin dueño: /rx-admin
+      Resumen (ventas), Pedidos (solo lectura), Productos,
+      Mesas/QR, Configuracion
+  - Importar menu CSV desde el panel del dueño
+  - Editar producto: precio, texto, foto, video, ocultar
+  - Videos 15–35 segundos al subir
+  - Calificar solo si: correo en sesion + pedido pagado + servido
+  - 3 opiniones recientes en el detalle del platillo
+
+CODIGO LISTO, FALTA CONFIGURAR
+  - R2 (fotos que sobrevivan al deploy) → ver r2-setup.txt
+  - Stripe de produccion (keys en Render)
+  - Contraseñas propias (no las de demo)
+
+NO HECHO (siguientes pasos reales)
+  - Multi-local / SaaS (tabla Tenant)
+  - Pantalla "listo para el mozo" (la comanda se va de cocina
+    al marcar servido)
+  - OCR de foto de menu (hoy: tu extraes CSV a mano)
+  - 2FA, rate-limit, usuarios con roles finos
+
+
+2. EL CSV EN DEPLOY: SI FUNCIONA
+--------------------------------
+El dueño NO necesita el repo ni Docker.
+
+Flujo en produccion (Render):
+  1. Entra a https://<tu-servicio>.onrender.com/rx-admin
+  2. Contraseña de dueño (ADMIN_PASSWORD)
+  3. Pestana Productos → Descargar plantilla o Subir CSV
+  4. El servidor parsea el archivo y escribe en Postgres
+
+No usa disco local. Es JSON al API:
+  PATCH /api/admin/data  { type: "menu-csv-import", csv: "..." }
+  Requiere cookie de admin.
+
+Columnas (separadas por coma):
+  categoria,nombre,precio,descripcion,ingredientes,calorias
+
+Reglas:
+  - Crea la categoria si no existe
+  - Si el nombre ya existe EN ESA categoria: actualiza
+    precio, descripcion, ingredientes, calorias
+  - NO borra ni pisa foto/video ya guardados
+  - Filas malas se saltan; el resto se importa
+
+Lo que el CSV NO hace:
+  - No sube fotos. Despues: editar platillo → Subir imagen
+  - Sin R2 en Render, esas fotos se PIERDEN en el siguiente deploy
+    (el platillo y el CSV siguen; solo se pierde el archivo)
+
+Primer arranque en Render:
+  El seed carga el menu demo (si la base esta vacia).
+  Luego el dueño puede importar SU csv: actualiza lo que
+  coincida por nombre+categoria y agrega lo nuevo.
+  No borra platillos que no vengan en el CSV.
+
+
+3. COMO ACCEDER (CUENTAS)
+-------------------------
+Las contraseñas de abajo son DEFAULTS de desarrollo.
+EN PRODUCCION hay que cambiarlas en Render → Environment.
+Nunca las subas a git (.env esta en .gitignore).
+
+A) Local (Docker)
+  App:     http://localhost:3000
+  Health:  http://localhost:3000/api/health
+  Dueño:   http://localhost:3000/rx-admin
+           Password: restx-admin
+           (o ADMIN_PASSWORD del .env)
+  Cocina:  http://localhost:3000/rx-cocina
+           Password: restx-kitchen
+           (o KITCHEN_PASSWORD del .env)
+  Mesa:    http://localhost:3000/  → botones "Mesa N"
+           o el QR que genera el admin en Mesas / QR
+  Postgres Docker: localhost:5432
+           user restx / pass restx / db restxperience
+
+B) Produccion (Render)
+  URL: https://<nombre-servicio>.onrender.com
+  Mismas rutas: /rx-admin  /rx-cocina  /mesa/<token>
+  Contraseñas = las que TU pongas en:
+    ADMIN_PASSWORD
+    KITCHEN_PASSWORD
+  Si no las pones, el codigo usa restx-admin / restx-kitchen
+  → cualquiera que adivine la URL entra. NO dejes eso.
+
+C) Stripe
+  Dashboard: https://dashboard.stripe.com
+  Test keys: sk_test_... / pk_test_...
+  Webhook prod:
+    https://<tu-servicio>.onrender.com/api/webhooks/stripe
+    Eventos: checkout.session.completed,
+             checkout.session.async_payment_succeeded,
+             checkout.session.expired,
+             checkout.session.async_payment_failed
+  Sin STRIPE_SECRET_KEY el pago es DEMO (un clic confirma).
+  No publiques asi.
+
+D) Cloudflare R2
+  Dashboard: https://dash.cloudflare.com → R2
+  Bucket previsto: restxperience-media
+  Paso a paso: r2-setup.txt
+  Hoy: wrangler NO esta logueado en esta PC; no hay .env
+  con keys R2. El codigo ya sabe hablar con R2.
+
+E) Git / Render
+  Repo local: D:\restxperience
+  Deploy: render.yaml (Docker + Postgres 16)
+  Healthcheck: GET /api/health
+
+
+4. SEGURIDAD QUE TENEMOS HOY
+----------------------------
+SI tenemos
+  - Admin y cocina con contraseña distinta
+  - Cookie httpOnly, sameSite=lax, 12 horas
+  - Cookie secure=true cuando NODE_ENV=production
+  - Rutas de mutacion admin/cocina piden cookie
+  - CSV y upload solo con sesion admin
+  - .env no se commitea
+  - Calificaciones: email de sesion + pagado + servido
+  - Comanda solo despues de pago (fulfillPaidOrder)
+  - Videos: tipo MIME + duracion 15–35 s
+  - Upload: max 50 MB, tipos de imagen/video fijos
+  - Seed no resetea la base en cada deploy
+    (solo si esta vacia o FORCE_SEED=1)
+
+NO tenemos (hay que saberlo)
+  - Usuarios con email (solo una password compartida
+    por rol: todos los dueños usan la misma; toda la
+    cocina usa la misma)
+  - 2FA
+  - Rate limit (alguien puede probar passwords)
+  - Las URLs /rx-admin y /rx-cocina son "oscuras",
+    no secretas: hay que poner passwords fuertes
+  - El secreto de sesion por defecto
+    (rx-session-ok / rx-kitchen-session-secret)
+    SI no pones ADMIN_SESSION_SECRET /
+    KITCHEN_SESSION_SECRET en Render
+  - Health publica si Stripe esta configurado (no keys)
+  - Multi-tenant: un deploy = un restaurante
+  - Backup automatico documentado (Render Postgres
+    tiene el suyo segun plan)
+
+Minimo obligatorio antes de un cliente real
+  1. ADMIN_PASSWORD largo y unico
+  2. KITCHEN_PASSWORD distinto
+  3. ADMIN_SESSION_SECRET y KITCHEN_SESSION_SECRET
+     aleatorios (Render puede generateValue)
+  4. Stripe live + webhook
+  5. R2 para fotos
+  6. No dejar el seed demo si el menu del cliente
+     es otro (importar CSV y ocultar/borrar platillos
+     que no sean de ellos)
+
+
+5. VARIABLES DE ENTORNO (Render / .env)
+---------------------------------------
+Obligatorias en prod
+  DATABASE_URL          (la pone el Postgres de Render)
+  ADMIN_PASSWORD
+  ADMIN_SESSION_SECRET
+  KITCHEN_PASSWORD
+  KITCHEN_SESSION_SECRET
+
+Para cobrar de verdad
+  STRIPE_SECRET_KEY
+  STRIPE_WEBHOOK_SECRET
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+
+Para que las fotos no se borren
+  R2_ACCOUNT_ID
+  R2_ACCESS_KEY_ID
+  R2_SECRET_ACCESS_KEY
+  R2_BUCKET=restxperience-media
+  R2_PUBLIC_BASE_URL=https://pub-xxxx.r2.dev
+
+Opcional
+  FORCE_SEED=1          borra y reseedea (peligroso)
+
+
+6. SIGUIENTES PASOS (AJUSTADOS)
+-------------------------------
+Orden corto para "¿el deploy sirve con CSV?":
+
+  A. Deploy tecnico (sin SaaS todavia)
+     1. Subir a GitHub y crear el web+DB en Render
+     2. Poner passwords fuertes (no las de demo)
+     3. Probar /rx-admin → Subir CSV → ver platillos
+     4. Crear 1 mesa, abrir el QR, ver el menu
+
+  B. Media (antes de fotos reales del cliente)
+     5. Seguir r2-setup.txt y pegar R2_* en Render
+     6. Subir 1 foto de prueba, redeploy, confirmar
+        que sigue ahi
+
+  C. Dinero
+     7. Stripe test end-to-end
+     8. Stripe live + webhook cuando haya cliente
+
+  D. Producto (despues de que A–C funcionen)
+     9. Tenant / sucursales (SaaS)
+    10. Cola "listo para llevar" para el mozo
+
+No hace falta un branch por restaurante.
+Un deploy por cliente (hoy) o un Tenant (despues).
+
+
+7. PRUEBA RAPIDA DEL CSV (local o prod)
+---------------------------------------
+Archivo ejemplo (UTF-8, comas):
+
+  categoria,nombre,precio,descripcion,ingredientes,calorias
+  Entradas,Guacamole Natural,229,Aguacate fresco,Aguacate; limon,280
+
+Admin → Productos → Subir CSV
+Mensaje esperado: "X nuevos, Y actualizados"
+El menu de la mesa muestra esos nombres al recargar.

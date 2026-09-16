@@ -35,10 +35,6 @@ export default async function MesaPage({
     ? await prisma.product.findUnique({ where: { id: settings.dishOfDayId } })
     : null;
 
-  const canReview =
-    session.status === "paid" ||
-    session.orders.some((o) => o.status === "paid");
-
   const commerceMode = (settings?.commerceMode || "stripe") as CommerceMode;
 
   return (
@@ -53,7 +49,6 @@ export default async function MesaPage({
       currency={settings?.currency || "MXN"}
       commerceMode={commerceMode}
       dishOfDayName={dishOfDay?.name || null}
-      canReview={canReview}
       expiresAt={session.expiresAt?.toISOString() || null}
       categories={categories
         .filter((c) => c.products.length)
@@ -71,6 +66,19 @@ export default async function MesaPage({
             videoUrl: p.videoUrl,
             avgStars: avgRating(p.ratings),
             ratingCount: p.ratings.length,
+            recentOpinions: p.ratings
+              .filter((r) => r.comment.trim())
+              .sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+              )
+              .slice(0, 3)
+              .map((r) => ({
+                stars: r.stars,
+                comment: r.comment,
+                createdAt: r.createdAt.toISOString(),
+              })),
           })),
         }))}
     />

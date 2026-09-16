@@ -1,0 +1,101 @@
+RestXperience — Cloudflare R2 (fotos y videos)
+==============================================
+Estado: codigo listo. Falta crear bucket + token en Cloudflare
+        y pegar las variables en .env (y en Render al desplegar).
+
+Por que R2
+----------
+Hoy, si NO hay credenciales R2, las fotos se guardan en
+public/uploads/ (solo sirve en Docker local).
+En Render ese disco se borra en cada deploy.
+
+Con R2 el archivo vive en Cloudflare. En Postgres solo se
+guarda la URL publica (imageUrl / videoUrl).
+El codigo esta en src/lib/storage.ts y src/app/api/admin/upload.
+
+Paso 1 — Cuenta Cloudflare
+--------------------------
+1. Entra a https://dash.cloudflare.com
+2. Si no tienes cuenta, creala (el plan gratis alcanza).
+3. En la barra lateral: R2 Object Storage.
+   La primera vez te pide habilitar R2 (gratis).
+
+Paso 2 — Crear el bucket
+------------------------
+1. R2 → Create bucket
+2. Nombre: restxperience-media
+3. Location: Automatic (o la mas cercana a Mexico)
+4. Create bucket
+
+Paso 3 — Hacer el bucket publico (para que el menu cargue las fotos)
+-------------------------------------------------------------------
+1. Abre el bucket restxperience-media
+2. Settings → Public access
+3. Enable R2.dev subdomain  (la opcion rapida)
+4. Copia la URL que te da, ejemplo:
+   https://pub-xxxxxxxxxxxxxxxx.r2.dev
+   Esa es R2_PUBLIC_BASE_URL (sin slash al final)
+
+Opcional despues: custom domain tipo media.turestaurante.com
+(requiere un dominio en Cloudflare).
+
+Paso 4 — Token S3 (para que la app suba archivos)
+-------------------------------------------------
+1. R2 → Manage R2 API Tokens (o Overview → API)
+2. Create API token
+3. Permisos: Object Read & Write
+4. Scope: solo el bucket restxperience-media
+5. Create
+6. Copia YA (el secret no se vuelve a ver):
+   - Account ID          → R2_ACCOUNT_ID
+   - Access Key ID       → R2_ACCESS_KEY_ID
+   - Secret Access Key   → R2_SECRET_ACCESS_KEY
+
+Paso 5 — Variables locales
+--------------------------
+Crea un archivo .env en la raiz del repo (NO lo subas a git).
+Copia desde .env.example y llena:
+
+  R2_ACCOUNT_ID=tu_account_id
+  R2_ACCESS_KEY_ID=...
+  R2_SECRET_ACCESS_KEY=...
+  R2_BUCKET=restxperience-media
+  R2_PUBLIC_BASE_URL=https://pub-xxxx.r2.dev
+
+Luego:
+  docker compose restart app
+
+Paso 6 — Probar
+---------------
+1. http://localhost:3000/rx-admin  (restx-admin)
+2. Productos → editar un platillo → Subir imagen
+3. La URL debe verse asi:
+   https://pub-xxxx.r2.dev/products/image/xxxxx.jpg
+   NO /uploads/...
+4. Abre la mesa: la foto carga desde Cloudflare
+5. Si no hay vars R2, sigue funcionando en local con /uploads/
+
+Paso 7 — Render (cuando despliegues)
+------------------------------------
+En el servicio web, agrega las mismas R2_* como env vars.
+En render.yaml ya estan declaradas (sync: false).
+Sin ellas, en produccion las fotos se perderian al redeploy.
+
+Wrangler (opcional, no obligatorio)
+-----------------------------------
+npx wrangler login
+npx wrangler r2 bucket create restxperience-media
+npx wrangler r2 bucket dev-url enable restxperience-media
+
+Hoy wrangler no esta logueado en esta maquina
+(token vencido / nunca se hizo login).
+El dashboard es suficiente.
+
+Cuando retomemos
+----------------
+- Pegar vars en .env (no en el chat)
+- docker compose restart app
+- Subir una foto de prueba
+- Luego Stripe de produccion
+- Multi-local / SaaS (ver conversacion: no usar un branch
+  por restaurante; un producto, muchos tenants)
