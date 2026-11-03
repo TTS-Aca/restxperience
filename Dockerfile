@@ -15,7 +15,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public"
 RUN npx prisma generate
-RUN npm run build
+RUN npm run build && npm prune --omit=dev && npx prisma generate
 
 FROM base AS runner
 ENV NODE_ENV=production
@@ -26,22 +26,17 @@ ENV HOSTNAME=0.0.0.0
 RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
-COPY --from=builder /app/node_modules/esbuild ./node_modules/esbuild
-COPY --from=builder /app/node_modules/nanoid ./node_modules/nanoid
-COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
-COPY docker/prod-entrypoint.sh ./docker/prod-entrypoint.sh
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/docker/prod-entrypoint.sh ./docker/prod-entrypoint.sh
 
 RUN sed -i 's/\r$//' ./docker/prod-entrypoint.sh \
   && chmod +x ./docker/prod-entrypoint.sh \
-  && chown -R nextjs:nodejs /app
+  && mkdir -p /app/public/uploads \
+  && chown nextjs:nodejs /app/public/uploads
 
 USER nextjs
 EXPOSE 3000

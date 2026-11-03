@@ -21,4 +21,7 @@ if [ -f ./node_modules/tsx/dist/cli.mjs ]; then
   node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts || echo "Seed omitido (el sitio igual arranca)."
 fi
 
+# Render inyecta HOSTNAME con el id del contenedor. Next standalone
+# lo usa para escuchar y entonces no abre el puerto público.
+export HOSTNAME=0.0.0.0
 exec node server.js
