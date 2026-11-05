@@ -1,96 +1,105 @@
-LICENCIA Y ENTREGA DEL SOFTWARE RESTXPERIENCE
+LICENCIA DE ENTREGA DEL SISTEMA RESTXPERIENCE
 
-Proveedor: [NOMBRE DE TU EMPRESA]
-Cliente:   [NOMBRE DEL RESTAURANTE O RAZÓN SOCIAL]
-Fecha de entrega: [FECHA]
+Proveedor:            [NOMBRE DE LA EMPRESA PROVEEDORA]
+Cliente:              [NOMBRE DEL RESTAURANTE O RAZÓN SOCIAL]
+Versión entregada:    RestXperience 1.0
+Forma de entrega:     Archivo ZIP con el código completo del sistema
+Fecha de entrega:     [FECHA]
 
-Este documento explica, en palabras sencillas, qué recibe el Cliente y qué
-puede hacer con él.
-
-
-1. Qué se entrega
-
-   El Proveedor entrega al Cliente una copia completa del código de
-   RestXperience (en adelante, "el Software"): el menú digital con QR, la
-   pantalla de cocina, el panel del dueño y sus instrucciones.
-
-   La entrega no tiene costo.
+El presente documento establece qué recibe el Cliente y en qué condiciones
+puede utilizarlo.
 
 
-2. El Software es del Cliente
+PRIMERA. Objeto de la entrega
 
-   Desde la fecha de entrega, la copia entregada es propiedad del Cliente.
-   Sin pedir permiso y sin pagar nada al Proveedor, el Cliente puede:
-
-   a) Usarla en uno o en varios restaurantes.
-   b) Instalarla en el servidor o proveedor de su elección.
-   c) Modificarla, cambiarle el nombre, los colores y el logotipo.
-   d) Copiarla, venderla, regalarla o cederla a quien quiera.
-   e) Contratar a cualquier persona o empresa para que la instale o la cambie.
+El Proveedor entrega al Cliente, sin costo alguno, la versión 1.0 del
+sistema RestXperience (en lo sucesivo, "la Versión Entregada"), contenida en
+el archivo ZIP descrito arriba. La Versión Entregada incluye el menú digital
+con código QR, la pantalla de cocina, el panel de administración y sus
+instrucciones de instalación.
 
 
-3. El Proveedor no cobra por el Software
+SEGUNDA. La Versión Entregada pertenece al Cliente
 
-   No hay licencia, mensualidad, regalías ni porcentaje sobre ventas.
+A partir de la fecha de entrega, la Versión Entregada es del Cliente. El
+Cliente puede, a su criterio y sin requerir autorización ni realizar pago
+alguno al Proveedor:
 
-
-4. Lo único que se cobra: servicios opcionales
-
-   Solo si el Cliente lo pide, el Proveedor puede cobrar por:
-
-   a) Ponerlo en línea (instalación y configuración).
-   b) Darle mantenimiento, soporte o actualizaciones.
-   c) Hacer cambios o funciones nuevas.
-
-   Estos servicios se acuerdan por separado y por escrito. Contratarlos es
-   opcional; el Cliente puede usar el Software sin ellos.
+   a) Utilizarla en uno o varios establecimientos.
+   b) Instalarla en el servidor o proveedor de servicios que elija.
+   c) Modificarla y adaptarla, incluyendo nombre, colores y logotipo.
+   d) Encargar su instalación o modificación a cualquier persona o empresa.
 
 
-5. Servicios de otras empresas
+TERCERA. Sin cobro por la Versión Entregada
 
-   Para funcionar en línea, el Software se apoya en servicios de otras
-   empresas, por ejemplo Render (página y base de datos), Stripe (cobros con
-   tarjeta) y Cloudflare (fotos y videos). El Cliente abre esas cuentas a su
-   nombre y les paga directamente, según sus propias tarifas y condiciones.
-   El Proveedor no cobra ni recibe comisión por ellos.
+El Proveedor no cobra licencia, mensualidad, regalías ni porcentaje alguno
+sobre las ventas del Cliente por el uso de la Versión Entregada.
 
 
-6. Piezas de código libre
+CUARTA. Servicios opcionales con costo
 
-   El Software usa componentes de código libre de terceros (por ejemplo
-   Next.js, React y Prisma). Esos componentes conservan sus propias licencias,
-   que permiten el uso comercial. Este documento no cambia esas licencias.
+El Proveedor únicamente cobrará los siguientes servicios, siempre que el
+Cliente los solicite:
 
+   a) Instalación y puesta en línea del sistema.
+   b) Mantenimiento, soporte técnico o actualizaciones.
+   c) Modificaciones o funciones nuevas.
 
-7. La demo es solo de muestra
-
-   Cualquier dirección de demostración que el Proveedor haya compartido sirve
-   únicamente para ver cómo se ve y cómo funciona. No forma parte de la
-   entrega, puede apagarse o reiniciarse en cualquier momento, y la
-   información que se capture ahí no se conserva. El restaurante debe
-   instalar su propia copia para operar.
+Dichos servicios, así como su costo, se acordarán por separado y por
+escrito. Su contratación es opcional; el Cliente puede utilizar la Versión
+Entregada sin ellos.
 
 
-8. Se entrega tal como está
+QUINTA. Servicios de terceros
 
-   El Software se entrega en el estado en que se encuentra, sin garantía.
-   Salvo que exista un contrato de mantenimiento por escrito, el Proveedor no
-   responde por fallas, interrupciones, pérdida de información, cobros
-   rechazados o daños derivados de su uso.
-
-
-9. Responsabilidades del Cliente
-
-   Al operar el Software, el Cliente es responsable de:
-
-   a) Sus cuentas, contraseñas y llaves de acceso.
-   b) Los datos de sus comensales (por ejemplo, correos) y de contar con su
-      aviso de privacidad conforme a la ley aplicable.
-   c) Sus obligaciones fiscales sobre las ventas que cobre.
+Para operar en internet, el sistema requiere servicios de otras empresas,
+como Render (página y base de datos), Stripe (cobros con tarjeta) y
+Cloudflare (fotografías y videos). El Cliente contratará dichos servicios a
+su nombre y los pagará directamente a cada empresa, conforme a sus propias
+tarifas y condiciones. El Proveedor no cobra ni recibe comisión alguna por
+estos servicios.
 
 
-Firmas
+SEXTA. Componentes de código libre
 
-Proveedor: ______________________________   Fecha: ______________
+El sistema incorpora componentes de código libre desarrollados por terceros
+(por ejemplo, Next.js, React y Prisma). Dichos componentes conservan sus
+licencias originales, las cuales permiten su uso comercial. El presente
+documento no modifica esas licencias.
 
-Cliente:   ______________________________   Fecha: ______________
+
+SÉPTIMA. Demostración
+
+Cualquier dirección de demostración compartida por el Proveedor tiene
+únicamente el propósito de mostrar el aspecto y el funcionamiento del
+sistema. No forma parte de la Versión Entregada, puede suspenderse o
+reiniciarse en cualquier momento, y la información capturada en ella no se
+conserva. Para operar, el Cliente deberá instalar la Versión Entregada en
+sus propias cuentas.
+
+
+OCTAVA. Entrega en el estado actual
+
+La Versión Entregada se proporciona en el estado en que se encuentra, sin
+garantía de ningún tipo. Salvo que exista un contrato de mantenimiento por
+escrito, el Proveedor no será responsable de fallas, interrupciones, pérdida
+de información, cobros rechazados ni daños derivados de su uso.
+
+
+NOVENA. Responsabilidades del Cliente
+
+Al operar el sistema, el Cliente es responsable de:
+
+   a) Resguardar sus cuentas, contraseñas y llaves de acceso.
+   b) Proteger los datos de sus comensales (por ejemplo, correos
+      electrónicos) y contar con el aviso de privacidad que exija la
+      legislación aplicable.
+   c) Cumplir sus obligaciones fiscales sobre las ventas que cobre.
+
+
+FIRMAS
+
+Por el Proveedor: ______________________________   Fecha: ______________
+
+Por el Cliente:   ______________________________   Fecha: ______________

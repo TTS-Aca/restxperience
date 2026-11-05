@@ -1,324 +1,322 @@
-# RestXperience
+# RestXperience 1.0
 
-Menú digital para restaurantes. Cada mesa tiene su código QR: el comensal lo escanea con su celular, ve los platillos con foto o video, pide, paga y califica. La cocina recibe la comanda en una pantalla, y el dueño administra todo desde un panel privado.
+Menú digital para restaurantes. Cada mesa cuenta con un código QR: el comensal lo escanea con su celular, consulta los platillos con fotografía o video, realiza su pedido, paga y califica. La cocina recibe la comanda en una pantalla y el dueño administra todo desde un panel privado.
 
-> **Este código es tuyo.** Se entrega sin costo y puedes usarlo, cambiarlo e instalarlo donde quieras. Solo se cobra si pides que te lo pongamos en línea o que le demos mantenimiento. Los detalles están en [`LICENSE`](LICENSE) y en la sección 8.
+> **Esta versión del sistema es suya.** La versión 1.0, entregada en el archivo ZIP, pertenece a su restaurante desde la fecha de entrega. No tiene costo y usted puede usarla, modificarla e instalarla a su criterio. Solo se cobra si usted solicita la instalación, el mantenimiento o algún cambio. Consulte la sección 8 y el archivo [`LICENSE`](LICENSE).
 
-Este documento explica cómo poner RestXperience en línea para tu restaurante, qué cuentas necesitas y dónde se consiguen. También existe una versión en Word para compartir: [`docs/RestXperience-Guia-de-arranque.docx`](docs/RestXperience-Guia-de-arranque.docx).
+Esta guía explica cómo poner RestXperience en línea, qué cuentas se requieren y dónde se obtienen. También se incluye una versión en Word: [`docs/RestXperience-Guia-de-arranque.docx`](docs/RestXperience-Guia-de-arranque.docx).
 
-### Demo de muestra
+### Demostración
 
-[https://restxperience-cxdx.onrender.com](https://restxperience-cxdx.onrender.com) sirve **solo para ver cómo se ve y cómo funciona**. No es tu restaurante: puede apagarse o reiniciarse en cualquier momento y lo que se capture ahí se borra. Para operar, instala tu propia copia siguiendo la sección 4.
+La dirección [https://restxperience-cxdx.onrender.com](https://restxperience-cxdx.onrender.com) sirve **únicamente para conocer el aspecto y el funcionamiento** del sistema. No es la instalación de su restaurante: puede suspenderse o reiniciarse en cualquier momento, y la información capturada en ella se borra. Para operar, instale su propia copia siguiendo la sección 4.
 
 ---
 
-## 1. Las tres pantallas
+## 1. Las tres pantallas del sistema
 
-| Quién la usa | Dirección | Para qué |
+| Usuario | Dirección | Función |
 |---|---|---|
-| Comensal | `/mesa/...` (se abre al escanear el QR) | Ver el menú, pedir, pagar y calificar |
-| Cocina | `/rx-cocina` | Ver las comandas ya pagadas y marcarlas como servidas |
-| Dueño | `/rx-admin` | Ventas, pedidos, menú, precios, fotos, mesas y QR |
+| Comensal | `/mesa/...` (se abre al escanear el QR) | Consultar el menú, pedir, pagar y calificar |
+| Cocina | `/rx-cocina` | Ver las comandas pagadas y marcarlas como servidas |
+| Dueño | `/rx-admin` | Consultar ventas y pedidos; administrar menú, precios, fotografías, mesas y códigos QR |
 
-Para verlas en la demo de muestra:
+Para verlas en la demostración:
 
 - Panel del dueño: [https://restxperience-cxdx.onrender.com/rx-admin](https://restxperience-cxdx.onrender.com/rx-admin)
 - Pantalla de cocina: [https://restxperience-cxdx.onrender.com/rx-cocina](https://restxperience-cxdx.onrender.com/rx-cocina)
 
-En tu propia instalación son las mismas rutas, pero con tu dirección.
+En su propia instalación las rutas son las mismas, con la dirección de su página.
 
-Las direcciones del dueño y de la cocina no aparecen en ningún botón del menú. Solo entra quien las conoce y tiene la contraseña.
+Las direcciones del dueño y de la cocina no aparecen en el menú de los comensales. Solo puede entrar quien las conozca y tenga la contraseña. La cocina no tiene acceso a ventas ni a la configuración.
 
 ## 2. Cómo funciona un pedido
 
 1. El comensal escanea el QR de su mesa y se abre el menú.
-2. Agrega platillos al carrito. Si quiere, deja su correo.
-3. Paga con tarjeta.
-4. **Solo cuando el pago se confirma**, la comanda aparece en la pantalla de cocina. Sin pago no llega nada.
+2. Agrega platillos al carrito y, si lo desea, registra su correo.
+3. Paga con tarjeta desde su celular.
+4. **La comanda llega a cocina únicamente cuando el pago se confirma.** Sin pago, no se envía nada.
 5. La cocina marca el pedido como servido.
-6. El comensal puede calificar lo que pidió y pagó.
+6. El comensal puede calificar los platillos que pidió.
 
-Si alguien abre el menú y no paga, su sesión se cierra sola a los 15 minutos.
+Si un comensal abre el menú y no paga, su sesión se cierra automáticamente a los 15 minutos.
 
-En el panel del dueño (Configuración → Modo de comercio) se elige cómo trabaja el restaurante:
+En el panel del dueño, en **Configuración → Modo de comercio**, se elige la forma de trabajo:
 
-| Modo | Qué hace |
+| Modo | Descripción |
 |---|---|
-| Stripe | El comensal paga con tarjeta desde su celular. Es el modo normal. |
-| SoftRestaurant | Igual que Stripe, y además envía el pedido al punto de venta SoftRestaurant. La conexión con SoftRestaurant todavía está en simulación. |
-| Solo menú | Menú visual sin carrito ni pagos. Sirve como carta digital. |
+| Stripe | El comensal paga con tarjeta desde su celular. Es el modo recomendado. |
+| SoftRestaurant | Funciona igual que Stripe y además envía el pedido al punto de venta SoftRestaurant. Esta conexión aún opera en modo de simulación. |
+| Solo menú | Carta digital, sin carrito ni pagos. |
 
-## 3. Cuentas que necesitas
+## 3. Cuentas necesarias
 
-Todas las cuentas se abren **a nombre del restaurante** y se pagan directamente a cada empresa. Nosotros no cobramos ni recibimos comisión por ellas.
+Todas las cuentas se abren **a nombre del restaurante** y se pagan directamente a cada empresa. Nuestro equipo no cobra ni recibe comisión por ellas.
 
-| Servicio | Para qué sirve | ¿Obligatorio? | Dónde se crea | Costo |
+| Servicio | Función | ¿Obligatorio? | Dónde se crea | Costo |
 |---|---|---|---|---|
-| GitHub | Guardar tu copia del código. Render la toma de ahí. | Sí | [github.com](https://github.com) | Gratis |
-| Render | Donde vive la página y la base de datos (menú, pedidos, ventas) | Sí | [render.com](https://render.com) | Gratis para probar; ver sección 6 |
-| Stripe | Cobrar con tarjeta | Para cobrar | [stripe.com/mx](https://stripe.com/mx) | Comisión por cada cobro |
-| Cloudflare R2 | Guardar las fotos y videos de los platillos | Muy recomendado | [dash.cloudflare.com](https://dash.cloudflare.com) | Gratis hasta 10 GB |
+| GitHub | Resguardar el código del sistema. Render lo toma de ahí. | Sí | [github.com](https://github.com) | Gratuito |
+| Render | Alojar la página y la base de datos (menú, pedidos y ventas) | Sí | [render.com](https://render.com) | Gratuito para pruebas; consulte la sección 6 |
+| Stripe | Cobrar con tarjeta y depositar en su cuenta bancaria | Para cobrar | [stripe.com/mx](https://stripe.com/mx) | Comisión por cada cobro |
+| Cloudflare R2 | Guardar las fotografías y videos de los platillos | Muy recomendable | [dash.cloudflare.com](https://dash.cloudflare.com) | Gratuito hasta 10 GB |
 
-No necesitas pagar ningún servicio de inteligencia artificial: el asistente del menú funciona por su cuenta. Los códigos QR también se generan gratis.
+No se requiere contratar ningún servicio de inteligencia artificial: el asistente del menú funciona de manera interna. Los códigos QR también se generan sin costo.
 
-## 4. Paso a paso para ponerlo en línea
+## 4. Instalación paso a paso
 
-Calcula entre 30 y 60 minutos la primera vez.
+La primera instalación toma entre 30 y 60 minutos. Tenga a la mano el archivo ZIP, un correo electrónico y una tarjeta bancaria.
 
-### Paso 1. Guardar tu copia del código en GitHub
+### Paso 1. Subir el código a GitHub
 
-Render necesita leer el código desde GitHub. Primero crea una cuenta gratis en [github.com](https://github.com). Luego elige una opción:
+Render lee el sistema desde GitHub, por lo que primero debe guardarse ahí.
 
-**Opción A (la más fácil): que te lo pasemos a tu cuenta**
+1. Cree una cuenta gratuita en [github.com](https://github.com).
+2. Descomprima el archivo ZIP en una carpeta de su computadora.
+3. Descargue e instale [GitHub Desktop](https://desktop.github.com) e inicie sesión con su cuenta.
+4. En GitHub Desktop, abra el menú **File → Add local repository** y seleccione la carpeta.
+5. Aparecerá el aviso de que la carpeta no es un repositorio. Pulse **create a repository** y después **Create repository**.
+6. Pulse **Publish repository**. Se recomienda mantener marcada la opción **Keep this code private**.
 
-1. Envíanos tu nombre de usuario de GitHub.
-2. Te llega un correo de GitHub con la invitación o la transferencia del repositorio. Acéptala.
-3. Listo: el repositorio `restxperience` ya aparece en tu cuenta.
-
-**Opción B: subirlo tú desde el archivo .zip**
-
-1. Descomprime el .zip que recibiste en una carpeta de tu computadora.
-2. Instala [GitHub Desktop](https://desktop.github.com) y entra con tu cuenta.
-3. Menú **File → Add local repository** y elige la carpeta. Si te dice que no es un repositorio, pulsa **create a repository** y luego **Create repository**.
-4. Pulsa **Publish repository**. Puedes dejar marcada la casilla **Keep this code private**.
-
-No uses la opción de "subir archivos" de la página de GitHub: el proyecto tiene carpetas y esa opción no las respeta bien.
+No utilice la opción de "subir archivos" de la página web de GitHub: el sistema contiene carpetas y esa opción no las conserva correctamente.
 
 ### Paso 2. Crear la página y la base de datos en Render
 
-1. Crea una cuenta en [render.com](https://render.com). Lo más fácil es entrar con tu cuenta de GitHub.
-2. En el panel de Render pulsa **New → Blueprint**.
-3. Elige tu repositorio `restxperience` y la rama `main`. Si no aparece, pulsa **Configure GitHub** y dale permiso a Render para verlo.
-4. Render lee el archivo del proyecto y te muestra lo que va a crear:
+1. Cree una cuenta en [render.com](https://render.com). Lo más sencillo es registrarse con su cuenta de GitHub.
+2. En el panel de Render, pulse **New → Blueprint**.
+3. Seleccione su repositorio `restxperience` y la rama `main`. Si no aparece, pulse **Configure GitHub** y otorgue permiso a Render para verlo.
+4. Render mostrará lo que va a crear:
    - **restxperience-db**: la base de datos.
    - **restxperience**: la página.
-5. Te pedirá llenar algunas claves. Por ahora llena solo estas dos:
+5. Se le pedirá llenar algunas claves. Por ahora, llene únicamente estas dos:
 
    | Clave | Qué escribir |
    |---|---|
    | `ADMIN_PASSWORD` | La contraseña del panel del dueño |
    | `KITCHEN_PASSWORD` | La contraseña de la pantalla de cocina |
 
-   Deja las demás vacías; se llenan en los pasos 3 y 4. Las claves de la base de datos y de seguridad las crea Render solo.
-6. Pulsa **Apply** (o **Deploy Blueprint**) y espera entre 5 y 10 minutos.
-7. Cuando diga **Live**, arriba aparece la dirección de tu página, por ejemplo `https://restxperience-xxxx.onrender.com`. Las letras del final las pone Render si el nombre ya estaba ocupado.
-8. Para comprobar que funciona, abre esa dirección y agrégale `/api/health`. Debe aparecer `"ok":true`.
+   Deje las demás en blanco; se completan en los pasos 3 y 4. Las claves de la base de datos y de seguridad las genera Render automáticamente.
+6. Pulse **Apply** (o **Deploy Blueprint**) y espere entre 5 y 10 minutos.
+7. Cuando aparezca el estado **Live**, en la parte superior se mostrará la dirección de su página, por ejemplo `https://restxperience-xxxx.onrender.com`. Las letras finales las agrega Render cuando el nombre ya está ocupado.
+8. Para comprobar que funciona, abra esa dirección agregando `/api/health` al final. Debe mostrarse `"ok":true`.
 
-**Importante:** usa siempre **Blueprint**. Si creas la página a mano con "New → Web Service", la base de datos no se conecta sola y la página no arranca (en el registro sale "falta DATABASE_URL").
+**Importante:** utilice siempre la opción **Blueprint**. Si crea la página manualmente con "New → Web Service", la base de datos no se conecta y la página no arranca (en el registro aparece el aviso "falta DATABASE_URL").
 
-Al terminar, el sistema ya trae un menú de ejemplo y 12 mesas para que lo pruebes.
+Al terminar, el sistema incluye un menú de ejemplo y 12 mesas para realizar pruebas.
 
-### Paso 3. Conectar Stripe para cobrar
+### Paso 3. Conectar Stripe para cobrar con tarjeta
 
-Sin este paso la página funciona en **modo demostración**: el pago se simula y la comanda sí llega a cocina. Sirve para enseñarlo, no para cobrar.
+Sin este paso, la página funciona en **modo demostración**: el pago se simula y la comanda sí llega a cocina. Sirve para mostrar el sistema, no para cobrar.
 
-**3.1 Obtener las llaves**
+**3.1 Obtener las llaves de Stripe**
 
-1. Crea una cuenta en [stripe.com/mx](https://stripe.com/mx).
-2. Activa **Modo de prueba** (Test mode) para empezar sin cobrar dinero real.
-3. Ve a **Desarrolladores → Claves de API**. Ahí están:
-   - **Clave publicable**: empieza con `pk_test_`
-   - **Clave secreta**: empieza con `sk_test_` (pulsa "Mostrar")
-4. En Render, abre el servicio **restxperience → Environment → Edit** y pega:
+1. Cree una cuenta en [stripe.com/mx](https://stripe.com/mx).
+2. Active el **Modo de prueba** (Test mode) para comenzar sin movimientos de dinero real.
+3. Entre a **Desarrolladores → Claves de API**. Ahí encontrará:
+   - **Clave publicable**: comienza con `pk_test_`
+   - **Clave secreta**: comienza con `sk_test_` (pulse "Mostrar")
+4. En Render, abra el servicio **restxperience → Environment → Edit** y capture:
 
    | Clave | Valor |
    |---|---|
    | `STRIPE_SECRET_KEY` | La clave secreta `sk_test_...` |
    | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | La clave publicable `pk_test_...` |
 
-5. Pulsa **Save, rebuild, and deploy** y espera a que vuelva a decir **Live**.
+5. Pulse **Save, rebuild, and deploy** y espere a que el estado vuelva a **Live**.
 
-**3.2 Avisarle a la página cuando alguien paga**
+**3.2 Notificar a la página cuando se realiza un pago**
 
-Esto es lo que hace que la comanda salga a cocina en cuanto se confirma el pago.
+Este paso permite que la comanda se envíe a cocina en cuanto el pago se confirma.
 
-1. En Stripe ve a **Desarrolladores → Webhooks → Agregar destino** (Add endpoint).
-2. En la dirección escribe la de tu página seguida de `/api/webhooks/stripe`. Ejemplo: `https://restxperience-xxxx.onrender.com/api/webhooks/stripe`
-3. Selecciona estos 4 eventos:
+1. En Stripe, entre a **Desarrolladores → Webhooks → Agregar destino** (Add endpoint).
+2. Escriba la dirección de su página seguida de `/api/webhooks/stripe`. Ejemplo: `https://restxperience-xxxx.onrender.com/api/webhooks/stripe`
+3. Seleccione los siguientes 4 eventos:
    - `checkout.session.completed`
    - `checkout.session.async_payment_succeeded`
    - `checkout.session.expired`
    - `checkout.session.async_payment_failed`
-4. Guarda. Stripe te muestra un **secreto de firma** que empieza con `whsec_`.
-5. En Render, pégalo en `STRIPE_WEBHOOK_SECRET` y vuelve a guardar con **Save, rebuild, and deploy**.
+4. Guarde. Stripe mostrará un **secreto de firma** que comienza con `whsec_`.
+5. En Render, capture ese valor en `STRIPE_WEBHOOK_SECRET` y guarde nuevamente con **Save, rebuild, and deploy**.
 
-Para confirmar, abre `/api/health`: debe decir `"stripe":true` y `"webhook":true`.
+Para confirmar, abra `/api/health`: debe mostrar `"stripe":true` y `"webhook":true`.
 
-**3.3 Probar un pago**
+**3.3 Realizar un pago de prueba**
 
-Usa la tarjeta de prueba `4242 4242 4242 4242`, cualquier fecha futura y cualquier código de 3 dígitos. No se cobra nada.
+Utilice la tarjeta de prueba `4242 4242 4242 4242`, cualquier fecha futura y cualquier código de 3 dígitos. No se realiza ningún cargo.
 
-**3.4 Pasar a cobros reales**
+**3.4 Activar cobros reales**
 
-1. En Stripe completa **Activar cuenta**: datos del negocio, RFC y la cuenta bancaria (CLABE) donde quieres recibir el dinero.
-2. Desactiva el modo de prueba y copia las llaves **reales** (`pk_live_...` y `sk_live_...`).
-3. Repite el webhook del paso 3.2 en modo real. El secreto `whsec_` es distinto.
-4. Reemplaza las tres claves en Render y guarda.
+1. En Stripe, complete **Activar cuenta**: datos del negocio, RFC y la cuenta bancaria (CLABE) donde recibirá los pagos.
+2. Desactive el modo de prueba y copie las llaves **reales** (`pk_live_...` y `sk_live_...`).
+3. Repita el paso 3.2 en modo real. El secreto `whsec_` será distinto.
+4. Sustituya las tres claves en Render y guarde.
 
-### Paso 4. Guardar fotos y videos en Cloudflare R2
+### Paso 4. Guardar fotografías y videos en Cloudflare R2
 
-Sin este paso puedes subir fotos, pero **se borran cada vez que Render reinicia la página**. El menú, los precios y los pedidos no se pierden, porque viven en la base de datos.
+Sin este paso es posible subir fotografías, pero **se borran cada vez que Render reinicia la página**. El menú, los precios y los pedidos no se pierden, porque se guardan en la base de datos.
 
-1. Crea una cuenta en [dash.cloudflare.com](https://dash.cloudflare.com).
-2. En el menú lateral entra a **R2 Object Storage** y actívalo. Cloudflare puede pedir una tarjeta aunque no cobra dentro del uso gratuito.
-3. Pulsa **Create bucket** y nómbralo `restxperience-media`.
-4. Dentro del bucket ve a **Settings → Public access** y activa la dirección pública (**r2.dev**). Copia esa dirección; se ve como `https://pub-xxxxxxxx.r2.dev`.
-5. Regresa a R2 y abre **Manage API tokens → Create API token**:
+1. Cree una cuenta en [dash.cloudflare.com](https://dash.cloudflare.com).
+2. En el menú lateral, entre a **R2 Object Storage** y actívelo. Cloudflare puede solicitar una tarjeta, aunque no realiza cargos dentro del uso gratuito.
+3. Pulse **Create bucket** y asígnele el nombre `restxperience-media`.
+4. Dentro del bucket, entre a **Settings → Public access** y active la dirección pública (**r2.dev**). Copie esa dirección; tiene la forma `https://pub-xxxxxxxx.r2.dev`.
+5. Regrese a R2 y abra **Manage API tokens → Create API token**:
    - Permiso: **Object Read & Write**
-   - Bucket: solo `restxperience-media`
-   - Al crearlo te muestra **Access Key ID** y **Secret Access Key**. Cópialos en ese momento; el secreto no se vuelve a mostrar.
-6. En la página principal de R2 aparece tu **Account ID**.
-7. En Render, **Environment → Edit**, pega:
+   - Bucket: únicamente `restxperience-media`
+   - Al crearlo se mostrarán el **Access Key ID** y el **Secret Access Key**. Cópielos en ese momento; el secreto no vuelve a mostrarse.
+6. En la página principal de R2 aparece su **Account ID**.
+7. En Render, entre a **Environment → Edit** y capture:
 
    | Clave | Valor |
    |---|---|
-   | `R2_ACCOUNT_ID` | Tu Account ID |
+   | `R2_ACCOUNT_ID` | Su Account ID |
    | `R2_ACCESS_KEY_ID` | El Access Key ID |
    | `R2_SECRET_ACCESS_KEY` | El Secret Access Key |
    | `R2_BUCKET` | `restxperience-media` |
    | `R2_PUBLIC_BASE_URL` | La dirección pública, sin `/` al final |
 
-8. Guarda con **Save, rebuild, and deploy**.
+8. Guarde con **Save, rebuild, and deploy**.
 
-### Paso 5. Preparar tu restaurante
+### Paso 5. Configurar su restaurante
 
-Entra a `https://<tu-página>.onrender.com/rx-admin` con tu contraseña de dueño.
+Entre a `https://<su-página>.onrender.com/rx-admin` con la contraseña del dueño.
 
-1. **Configuración**: escribe el nombre del restaurante, la frase de presentación y el mensaje de bienvenida. Elige el modo de comercio y, si quieres, la comida del día.
-2. **Productos**: carga tu menú.
-   - Rápido: pulsa **Descargar plantilla**, llénala en Excel con categoría, nombre, precio, descripción, ingredientes y calorías, guárdala como CSV y pulsa **Subir CSV**. Si un platillo ya existe, solo se actualiza su precio y texto.
-   - Uno por uno: crea una categoría y pulsa **Nuevo producto**.
-   - Toca cualquier platillo para cambiar precio, texto, foto o video (de 15 a 35 segundos), u ocultarlo.
-3. **Mesas / QR**: borra las mesas de ejemplo si no te sirven y crea las tuyas. Cada mesa muestra su QR: imprímelo y colócalo en la mesa.
-4. **Resumen** y **Pedidos**: aquí ves ventas e historial.
+1. **Configuración**: capture el nombre del restaurante, la frase de presentación y el mensaje de bienvenida. Elija el modo de comercio y, si lo desea, la comida del día.
+2. **Productos**: cargue su menú.
+   - Forma rápida: pulse **Descargar plantilla**, llénela en Excel con categoría, nombre, precio, descripción, ingredientes y calorías, guárdela en formato CSV y pulse **Subir CSV**. Si un platillo ya existe, solo se actualizan su precio y su descripción.
+   - Uno por uno: cree una categoría y pulse **Nuevo producto**.
+   - Seleccione cualquier platillo para cambiar precio, descripción, fotografía o video (de 15 a 35 segundos), o para ocultarlo cuando se agote.
+3. **Mesas / QR**: elimine las mesas de ejemplo que no necesite y cree las suyas. Cada mesa muestra su código QR para imprimirlo y colocarlo en la mesa.
+4. **Resumen** y **Pedidos**: aquí se consultan las ventas y el historial.
 
-### Paso 6. Prueba completa antes de abrir
+### Paso 6. Prueba completa antes de abrir al público
 
-1. Escanea el QR de una mesa con tu celular.
-2. Pide algo y paga con la tarjeta de prueba.
-3. Abre `/rx-cocina` en otra pantalla: debe aparecer la comanda. Márcala como servida.
-4. En el celular, califica el platillo.
-5. En `/rx-admin → Resumen` revisa que aparezca la venta.
+1. Escanee el QR de una mesa con su celular.
+2. Realice un pedido y páguelo con la tarjeta de prueba.
+3. Abra `/rx-cocina` en otra pantalla: debe aparecer la comanda. Márquela como servida.
+4. Desde el celular, califique el platillo.
+5. En `/rx-admin → Resumen`, verifique que aparezca la venta.
+
+Si prefiere no realizar estos pasos, nuestro equipo puede hacer la instalación como servicio opcional.
 
 ## 5. Contraseñas
 
-- Las contraseñas del dueño y de la cocina se cambian en Render: **Environment → `ADMIN_PASSWORD` / `KITCHEN_PASSWORD`**, y luego **Save, rebuild, and deploy**.
-- Si no escribes ninguna, quedan las de demostración (`restx-admin` y `restx-kitchen`). **Cámbialas antes de usarlo con clientes.**
-- La cocina no ve dinero ni configuración, solo comandas.
+- Las contraseñas del dueño y de la cocina se cambian en Render: **Environment → `ADMIN_PASSWORD` / `KITCHEN_PASSWORD`**, y después **Save, rebuild, and deploy**.
+- Si no se captura ninguna, se aplican las de demostración (`restx-admin` y `restx-kitchen`). **Cámbielas antes de atender a comensales.**
 
-## 6. Costos y límites del plan gratis
+## 6. Costos y límites del plan gratuito
 
-El código no cuesta nada. Lo único que se paga son los servicios de otras empresas, y eso solo cuando decides dejarlo funcionando de forma permanente.
+El sistema no tiene costo. Lo único que se paga son los servicios de otras empresas, y solo cuando decida dejarlo operando de forma permanente.
 
-El plan gratuito de Render sirve para probar, pero tiene tres límites:
+El plan gratuito de Render sirve para pruebas, pero tiene tres límites:
 
-- La página se "duerme" tras 15 minutos sin visitas. La siguiente persona espera cerca de un minuto a que despierte.
-- **La base de datos gratuita se borra a los 30 días.** Antes de esa fecha hay que pasarla a un plan de pago o se pierden menú, pedidos y ventas.
+- La página se suspende tras 15 minutos sin visitas. La siguiente persona espera cerca de un minuto mientras se reactiva.
+- **La base de datos gratuita se elimina a los 30 días.** Antes de esa fecha debe cambiarse a un plan de pago; de lo contrario, se pierden el menú, los pedidos y las ventas.
 - Solo se permite una base de datos gratuita por cuenta.
 
-Para operar con clientes reales se recomienda (precios aproximados, revisa [render.com/pricing](https://render.com/pricing)):
+Para operar con comensales se recomiendan los siguientes planes (precios aproximados; consulte [render.com/pricing](https://render.com/pricing)):
 
-| Servicio | Plan | Costo aproximado al mes |
+| Servicio | Plan | Costo mensual aproximado |
 |---|---|---|
 | Página (Render) | Starter | 7 USD |
 | Base de datos (Render) | Basic | 6 USD |
-| Fotos (Cloudflare R2) | Gratis hasta 10 GB | 0 USD |
-| Cobros (Stripe) | Por transacción | Comisión por cobro; revisa [stripe.com/mx/pricing](https://stripe.com/mx/pricing) |
+| Fotografías (Cloudflare R2) | Gratuito hasta 10 GB | 0 USD |
+| Cobros (Stripe) | Por transacción | Comisión por cobro; consulte [stripe.com/mx/pricing](https://stripe.com/mx/pricing) |
 
-Para cambiar de plan: en Render abre el servicio o la base de datos → **Settings → Instance type**.
+Para cambiar de plan: en Render, abra la página o la base de datos y entre a **Settings → Instance type**.
 
-## 7. Problemas comunes
+## 7. Solución de problemas
 
-| Lo que ves | Qué pasa | Qué hacer |
+| Situación | Causa | Qué hacer |
 |---|---|---|
-| La página tarda un minuto en abrir | Estaba dormida (plan gratis) | Esperar, o pasar al plan Starter |
-| En Render sale "falta DATABASE_URL" | La página no está conectada a la base de datos | Crear todo con Blueprint, o en la base de datos copiar **Internal Database URL** y pegarla en la clave `DATABASE_URL` de la página |
-| Las fotos desaparecieron | No está configurado Cloudflare R2 | Hacer el paso 4 y volver a subir las fotos |
-| Se pagó pero la comanda no llegó a cocina | Falta el webhook de Stripe o su secreto | Revisar el paso 3.2 y que `/api/health` diga `"webhook":true` |
-| No me deja entrar al panel | Contraseña distinta a la guardada en Render | Revisar `ADMIN_PASSWORD` en Render |
-| Todo dejó de funcionar al mes | Venció la base de datos gratuita | Pasar la base a un plan de pago antes de 30 días |
+| La página tarda un minuto en abrir | Estaba suspendida (plan gratuito) | Esperar, o cambiar al plan Starter |
+| En Render aparece "falta DATABASE_URL" | La página no está conectada a la base de datos | Crear todo con Blueprint, o copiar la **Internal Database URL** de la base de datos y capturarla en la clave `DATABASE_URL` de la página |
+| Las fotografías desaparecieron | Cloudflare R2 no está configurado | Realizar el paso 4 y volver a subirlas |
+| Se cobró, pero la comanda no llegó a cocina | Falta el webhook de Stripe o su secreto | Revisar el paso 3.2 y que `/api/health` muestre `"webhook":true` |
+| No es posible entrar al panel | La contraseña no coincide con la guardada en Render | Revisar `ADMIN_PASSWORD` en Render |
+| El sistema dejó de funcionar al mes | Venció la base de datos gratuita | Cambiar la base de datos a un plan de pago antes de los 30 días |
 
-## 8. Licencia: qué es tuyo y qué se cobra
+## 8. Licencia
 
-El texto completo está en [`LICENSE`](LICENSE). En resumen:
+El texto completo se encuentra en [`LICENSE`](LICENSE). En resumen:
 
-- **El código es del restaurante** desde que se entrega. Puedes usarlo en uno o varios locales, cambiarle el nombre y el logo, modificarlo, venderlo o pedirle a cualquier persona que lo instale.
-- **No cobramos por el código**: no hay licencia, mensualidad ni porcentaje de tus ventas.
-- **Solo cobramos si tú lo pides**: ponerlo en línea, darle mantenimiento o hacerle cambios. Se acuerda aparte y es opcional.
-- **Los servicios de otras empresas** (Render, Stripe, Cloudflare) los contratas y pagas tú directamente.
-- **Se entrega tal como está.** Sin un contrato de mantenimiento no hay garantía de soporte.
-- Eres responsable de tus contraseñas, de los datos de tus comensales y de tu aviso de privacidad.
+| Tema | Qué significa |
+|---|---|
+| Propiedad | La versión 1.0, entregada en el archivo ZIP, es de su restaurante desde la fecha de entrega. |
+| Uso | Puede utilizarla en uno o varios establecimientos, modificarla, cambiarle nombre y logotipo, e instalarla a su criterio, sin solicitar autorización. |
+| Costo del sistema | Ninguno. No hay licencia, mensualidad ni porcentaje sobre sus ventas. |
+| Servicios con costo | Solo si usted los solicita: instalación, mantenimiento o modificaciones. Se acuerdan por separado y son opcionales. |
+| Servicios de terceros | Render, Stripe y Cloudflare se contratan y pagan directamente a cada empresa. |
+| Garantía | El sistema se entrega en su estado actual. Sin un contrato de mantenimiento, no incluye soporte. |
+| Responsabilidades | Usted resguarda sus contraseñas, los datos de sus comensales y su aviso de privacidad. |
 
 ---
 
-## Anexo técnico (para quien dé soporte)
+## Anexo técnico (para el personal de soporte)
 
 ### Tecnología
 
 - Next.js (App Router) + TypeScript + Tailwind, Framer Motion
 - Prisma + PostgreSQL 16
 - Stripe Checkout + webhook
-- Cloudflare R2 (compatible con S3) para fotos y videos; sin R2 se guarda en `public/uploads`
-- Docker. `render.yaml` define el web (Docker) y la base de datos.
+- Cloudflare R2 (compatible con S3) para fotografías y videos; sin R2 se guardan en `public/uploads`
+- Docker. `render.yaml` define el servicio web (Docker) y la base de datos.
 
-Al arrancar, el contenedor aplica migraciones (`prisma migrate deploy`) y carga el menú de ejemplo solo si la base está vacía.
+Al arrancar, el contenedor aplica las migraciones (`prisma migrate deploy`) y carga el menú de ejemplo solo si la base de datos está vacía.
 
 ### Variables de entorno
 
 | Variable | Obligatoria | Origen |
 |---|---|---|
 | `DATABASE_URL` | Sí | Render la conecta desde `restxperience-db` |
-| `ADMIN_PASSWORD` | Sí (si no, `restx-admin`) | La define el dueño |
+| `ADMIN_PASSWORD` | Sí (por omisión, `restx-admin`) | La define el dueño |
 | `ADMIN_SESSION_SECRET` | Sí | Render la genera |
-| `KITCHEN_PASSWORD` | Sí (si no, `restx-kitchen`) | La define el dueño |
+| `KITCHEN_PASSWORD` | Sí (por omisión, `restx-kitchen`) | La define el dueño |
 | `KITCHEN_SESSION_SECRET` | Sí | Render la genera |
 | `STRIPE_SECRET_KEY` | Para cobrar | Stripe → Claves de API |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Para cobrar | Stripe → Claves de API |
 | `STRIPE_WEBHOOK_SECRET` | Para cobrar | Stripe → Webhooks |
-| `R2_ACCOUNT_ID` | Para fotos | Cloudflare R2 |
-| `R2_ACCESS_KEY_ID` | Para fotos | Cloudflare R2 → API tokens |
-| `R2_SECRET_ACCESS_KEY` | Para fotos | Cloudflare R2 → API tokens |
-| `R2_BUCKET` | Para fotos | `restxperience-media` |
-| `R2_PUBLIC_BASE_URL` | Para fotos | URL pública del bucket |
+| `R2_ACCOUNT_ID` | Para fotografías | Cloudflare R2 |
+| `R2_ACCESS_KEY_ID` | Para fotografías | Cloudflare R2 → API tokens |
+| `R2_SECRET_ACCESS_KEY` | Para fotografías | Cloudflare R2 → API tokens |
+| `R2_BUCKET` | Para fotografías | `restxperience-media` |
+| `R2_PUBLIC_BASE_URL` | Para fotografías | URL pública del bucket |
 
-`PORT` la pone Render; no se configura.
+`PORT` la asigna Render; no se configura.
 
 ### Rutas de la API
 
 | Ruta | Uso |
 |---|---|
-| `GET /api/health` | Estado del servicio y si Stripe y el webhook están configurados |
+| `GET /api/health` | Estado del servicio y de la configuración de Stripe y del webhook |
 | `/api/session` | Abre o consulta la sesión de una mesa |
 | `/api/orders`, `/api/orders/cancel` | Crear y cancelar pedidos |
-| `/api/checkout/confirm` | Confirma el pago contra Stripe al volver del checkout |
+| `/api/checkout/confirm` | Confirma el pago con Stripe al regresar del checkout |
 | `POST /api/webhooks/stripe` | Recibe los eventos de Stripe y libera la comanda |
 | `/api/purchases`, `/api/ratings`, `/api/reviews` | Historial del comensal, calificaciones y opiniones |
 | `/api/chat` | Asistente del menú (reglas internas, sin servicio externo) |
 | `/api/kitchen/login`, `/api/kitchen/orders` | Acceso y comandas de cocina |
-| `/api/admin/login`, `/api/admin/data`, `/api/admin/upload` | Acceso, datos y subida de fotos/videos del panel |
+| `/api/admin/login`, `/api/admin/data`, `/api/admin/upload` | Acceso, datos y carga de fotografías y videos del panel |
 
-Servicios externos: Stripe, Cloudflare R2 y `api.qrserver.com` (genera las imágenes QR, sin llave).
+Servicios externos: Stripe, Cloudflare R2 y `api.qrserver.com` (genera las imágenes QR; no requiere llave).
 
-### Correr en una computadora (Docker)
+### Ejecución local con Docker
 
-No hace falta instalar Node.
+No es necesario instalar Node.
 
 ```bash
 docker compose up
 ```
 
-Abre [http://localhost:3000](http://localhost:3000). La primera vez instala dependencias, aplica migraciones y carga el menú de ejemplo. Postgres queda en el puerto 5432.
+Abra [http://localhost:3000](http://localhost:3000). La primera vez se instalan las dependencias, se aplican las migraciones y se carga el menú de ejemplo. PostgreSQL queda disponible en el puerto 5432.
 
-Volver a cargar el menú de ejemplo (borra menú, mesas y pedidos):
+Para volver a cargar el menú de ejemplo (borra menú, mesas y pedidos):
 
 ```bash
 docker compose exec app sh -c "FORCE_SEED=1 npm run db:seed"
 ```
 
-Probar la imagen de producción:
+Para probar la imagen de producción:
 
 ```bash
 docker compose --profile prod up --build web db
 ```
 
-Para claves locales copia `.env.example` a `.env`.
+Para usar claves locales, copie `.env.example` como `.env`.
