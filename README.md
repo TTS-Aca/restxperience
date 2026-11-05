@@ -2,9 +2,13 @@
 
 Menú digital para restaurantes. Cada mesa tiene su código QR: el comensal lo escanea con su celular, ve los platillos con foto o video, pide, paga y califica. La cocina recibe la comanda en una pantalla, y el dueño administra todo desde un panel privado.
 
-Demo en vivo: [https://restxperience-cxdx.onrender.com](https://restxperience-cxdx.onrender.com)
+> **Este código es tuyo.** Se entrega sin costo y puedes usarlo, cambiarlo e instalarlo donde quieras. Solo se cobra si pides que te lo pongamos en línea o que le demos mantenimiento. Los detalles están en [`LICENSE`](LICENSE) y en la sección 8.
 
-> Este documento explica cómo poner RestXperience en línea para tu restaurante, qué cuentas necesitas y dónde se consiguen. También existe una versión en Word para compartir: [`docs/RestXperience-Guia-de-arranque.docx`](docs/RestXperience-Guia-de-arranque.docx).
+Este documento explica cómo poner RestXperience en línea para tu restaurante, qué cuentas necesitas y dónde se consiguen. También existe una versión en Word para compartir: [`docs/RestXperience-Guia-de-arranque.docx`](docs/RestXperience-Guia-de-arranque.docx).
+
+### Demo de muestra
+
+[https://restxperience-cxdx.onrender.com](https://restxperience-cxdx.onrender.com) sirve **solo para ver cómo se ve y cómo funciona**. No es tu restaurante: puede apagarse o reiniciarse en cualquier momento y lo que se capture ahí se borra. Para operar, instala tu propia copia siguiendo la sección 4.
 
 ---
 
@@ -16,10 +20,12 @@ Demo en vivo: [https://restxperience-cxdx.onrender.com](https://restxperience-cx
 | Cocina | `/rx-cocina` | Ver las comandas ya pagadas y marcarlas como servidas |
 | Dueño | `/rx-admin` | Ventas, pedidos, menú, precios, fotos, mesas y QR |
 
-En la demo:
+Para verlas en la demo de muestra:
 
 - Panel del dueño: [https://restxperience-cxdx.onrender.com/rx-admin](https://restxperience-cxdx.onrender.com/rx-admin)
 - Pantalla de cocina: [https://restxperience-cxdx.onrender.com/rx-cocina](https://restxperience-cxdx.onrender.com/rx-cocina)
+
+En tu propia instalación son las mismas rutas, pero con tu dirección.
 
 Las direcciones del dueño y de la cocina no aparecen en ningún botón del menú. Solo entra quien las conoce y tiene la contraseña.
 
@@ -44,9 +50,11 @@ En el panel del dueño (Configuración → Modo de comercio) se elige cómo trab
 
 ## 3. Cuentas que necesitas
 
+Todas las cuentas se abren **a nombre del restaurante** y se pagan directamente a cada empresa. Nosotros no cobramos ni recibimos comisión por ellas.
+
 | Servicio | Para qué sirve | ¿Obligatorio? | Dónde se crea | Costo |
 |---|---|---|---|---|
-| GitHub | Guardar tu copia del proyecto. Render la toma de ahí. | Sí | [github.com](https://github.com) | Gratis |
+| GitHub | Guardar tu copia del código. Render la toma de ahí. | Sí | [github.com](https://github.com) | Gratis |
 | Render | Donde vive la página y la base de datos (menú, pedidos, ventas) | Sí | [render.com](https://render.com) | Gratis para probar; ver sección 6 |
 | Stripe | Cobrar con tarjeta | Para cobrar | [stripe.com/mx](https://stripe.com/mx) | Comisión por cada cobro |
 | Cloudflare R2 | Guardar las fotos y videos de los platillos | Muy recomendado | [dash.cloudflare.com](https://dash.cloudflare.com) | Gratis hasta 10 GB |
@@ -57,18 +65,30 @@ No necesitas pagar ningún servicio de inteligencia artificial: el asistente del
 
 Calcula entre 30 y 60 minutos la primera vez.
 
-### Paso 1. Tener tu copia del proyecto en GitHub
+### Paso 1. Guardar tu copia del código en GitHub
 
-1. Crea una cuenta en [github.com](https://github.com) si no tienes.
-2. Abre [github.com/TTS-Aca/restxperience](https://github.com/TTS-Aca/restxperience) y pulsa **Fork** (arriba a la derecha). Así queda una copia en tu cuenta.
+Render necesita leer el código desde GitHub. Primero crea una cuenta gratis en [github.com](https://github.com). Luego elige una opción:
 
-Si el equipo de RestXperience te dio acceso directo a un repositorio, usa ese y salta este paso.
+**Opción A (la más fácil): que te lo pasemos a tu cuenta**
+
+1. Envíanos tu nombre de usuario de GitHub.
+2. Te llega un correo de GitHub con la invitación o la transferencia del repositorio. Acéptala.
+3. Listo: el repositorio `restxperience` ya aparece en tu cuenta.
+
+**Opción B: subirlo tú desde el archivo .zip**
+
+1. Descomprime el .zip que recibiste en una carpeta de tu computadora.
+2. Instala [GitHub Desktop](https://desktop.github.com) y entra con tu cuenta.
+3. Menú **File → Add local repository** y elige la carpeta. Si te dice que no es un repositorio, pulsa **create a repository** y luego **Create repository**.
+4. Pulsa **Publish repository**. Puedes dejar marcada la casilla **Keep this code private**.
+
+No uses la opción de "subir archivos" de la página de GitHub: el proyecto tiene carpetas y esa opción no las respeta bien.
 
 ### Paso 2. Crear la página y la base de datos en Render
 
 1. Crea una cuenta en [render.com](https://render.com). Lo más fácil es entrar con tu cuenta de GitHub.
 2. En el panel de Render pulsa **New → Blueprint**.
-3. Elige tu copia de `restxperience` y la rama `main`.
+3. Elige tu repositorio `restxperience` y la rama `main`. Si no aparece, pulsa **Configure GitHub** y dale permiso a Render para verlo.
 4. Render lee el archivo del proyecto y te muestra lo que va a crear:
    - **restxperience-db**: la base de datos.
    - **restxperience**: la página.
@@ -86,7 +106,7 @@ Si el equipo de RestXperience te dio acceso directo a un repositorio, usa ese y 
 
 **Importante:** usa siempre **Blueprint**. Si creas la página a mano con "New → Web Service", la base de datos no se conecta sola y la página no arranca (en el registro sale "falta DATABASE_URL").
 
-Al terminar, el sistema ya trae un menú de ejemplo y 8 mesas para que lo pruebes.
+Al terminar, el sistema ya trae un menú de ejemplo y 12 mesas para que lo pruebes.
 
 ### Paso 3. Conectar Stripe para cobrar
 
@@ -188,7 +208,9 @@ Entra a `https://<tu-página>.onrender.com/rx-admin` con tu contraseña de dueñ
 
 ## 6. Costos y límites del plan gratis
 
-El plan gratuito de Render sirve para probar y enseñar, pero tiene tres límites:
+El código no cuesta nada. Lo único que se paga son los servicios de otras empresas, y eso solo cuando decides dejarlo funcionando de forma permanente.
+
+El plan gratuito de Render sirve para probar, pero tiene tres límites:
 
 - La página se "duerme" tras 15 minutos sin visitas. La siguiente persona espera cerca de un minuto a que despierte.
 - **La base de datos gratuita se borra a los 30 días.** Antes de esa fecha hay que pasarla a un plan de pago o se pierden menú, pedidos y ventas.
@@ -215,6 +237,17 @@ Para cambiar de plan: en Render abre el servicio o la base de datos → **Settin
 | Se pagó pero la comanda no llegó a cocina | Falta el webhook de Stripe o su secreto | Revisar el paso 3.2 y que `/api/health` diga `"webhook":true` |
 | No me deja entrar al panel | Contraseña distinta a la guardada en Render | Revisar `ADMIN_PASSWORD` en Render |
 | Todo dejó de funcionar al mes | Venció la base de datos gratuita | Pasar la base a un plan de pago antes de 30 días |
+
+## 8. Licencia: qué es tuyo y qué se cobra
+
+El texto completo está en [`LICENSE`](LICENSE). En resumen:
+
+- **El código es del restaurante** desde que se entrega. Puedes usarlo en uno o varios locales, cambiarle el nombre y el logo, modificarlo, venderlo o pedirle a cualquier persona que lo instale.
+- **No cobramos por el código**: no hay licencia, mensualidad ni porcentaje de tus ventas.
+- **Solo cobramos si tú lo pides**: ponerlo en línea, darle mantenimiento o hacerle cambios. Se acuerda aparte y es opcional.
+- **Los servicios de otras empresas** (Render, Stripe, Cloudflare) los contratas y pagas tú directamente.
+- **Se entrega tal como está.** Sin un contrato de mantenimiento no hay garantía de soporte.
+- Eres responsable de tus contraseñas, de los datos de tus comensales y de tu aviso de privacidad.
 
 ---
 

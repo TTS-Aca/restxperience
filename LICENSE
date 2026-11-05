@@ -1,0 +1,96 @@
+LICENCIA Y ENTREGA DEL SOFTWARE RESTXPERIENCE
+
+Proveedor: [NOMBRE DE TU EMPRESA]
+Cliente:   [NOMBRE DEL RESTAURANTE O RAZÓN SOCIAL]
+Fecha de entrega: [FECHA]
+
+Este documento explica, en palabras sencillas, qué recibe el Cliente y qué
+puede hacer con él.
+
+
+1. Qué se entrega
+
+   El Proveedor entrega al Cliente una copia completa del código de
+   RestXperience (en adelante, "el Software"): el menú digital con QR, la
+   pantalla de cocina, el panel del dueño y sus instrucciones.
+
+   La entrega no tiene costo.
+
+
+2. El Software es del Cliente
+
+   Desde la fecha de entrega, la copia entregada es propiedad del Cliente.
+   Sin pedir permiso y sin pagar nada al Proveedor, el Cliente puede:
+
+   a) Usarla en uno o en varios restaurantes.
+   b) Instalarla en el servidor o proveedor de su elección.
+   c) Modificarla, cambiarle el nombre, los colores y el logotipo.
+   d) Copiarla, venderla, regalarla o cederla a quien quiera.
+   e) Contratar a cualquier persona o empresa para que la instale o la cambie.
+
+
+3. El Proveedor no cobra por el Software
+
+   No hay licencia, mensualidad, regalías ni porcentaje sobre ventas.
+
+
+4. Lo único que se cobra: servicios opcionales
+
+   Solo si el Cliente lo pide, el Proveedor puede cobrar por:
+
+   a) Ponerlo en línea (instalación y configuración).
+   b) Darle mantenimiento, soporte o actualizaciones.
+   c) Hacer cambios o funciones nuevas.
+
+   Estos servicios se acuerdan por separado y por escrito. Contratarlos es
+   opcional; el Cliente puede usar el Software sin ellos.
+
+
+5. Servicios de otras empresas
+
+   Para funcionar en línea, el Software se apoya en servicios de otras
+   empresas, por ejemplo Render (página y base de datos), Stripe (cobros con
+   tarjeta) y Cloudflare (fotos y videos). El Cliente abre esas cuentas a su
+   nombre y les paga directamente, según sus propias tarifas y condiciones.
+   El Proveedor no cobra ni recibe comisión por ellos.
+
+
+6. Piezas de código libre
+
+   El Software usa componentes de código libre de terceros (por ejemplo
+   Next.js, React y Prisma). Esos componentes conservan sus propias licencias,
+   que permiten el uso comercial. Este documento no cambia esas licencias.
+
+
+7. La demo es solo de muestra
+
+   Cualquier dirección de demostración que el Proveedor haya compartido sirve
+   únicamente para ver cómo se ve y cómo funciona. No forma parte de la
+   entrega, puede apagarse o reiniciarse en cualquier momento, y la
+   información que se capture ahí no se conserva. El restaurante debe
+   instalar su propia copia para operar.
+
+
+8. Se entrega tal como está
+
+   El Software se entrega en el estado en que se encuentra, sin garantía.
+   Salvo que exista un contrato de mantenimiento por escrito, el Proveedor no
+   responde por fallas, interrupciones, pérdida de información, cobros
+   rechazados o daños derivados de su uso.
+
+
+9. Responsabilidades del Cliente
+
+   Al operar el Software, el Cliente es responsable de:
+
+   a) Sus cuentas, contraseñas y llaves de acceso.
+   b) Los datos de sus comensales (por ejemplo, correos) y de contar con su
+      aviso de privacidad conforme a la ley aplicable.
+   c) Sus obligaciones fiscales sobre las ventas que cobre.
+
+
+Firmas
+
+Proveedor: ______________________________   Fecha: ______________
+
+Cliente:   ______________________________   Fecha: ______________
