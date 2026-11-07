@@ -1,9 +1,26 @@
+import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
 
 const ADMIN_COOKIE = "rx_admin";
 const DEFAULT_ADMIN_PASSWORD = "restx-admin";
+
+/**
+ * Sin secreto configurado, la sesión usa uno aleatorio por proceso: un valor
+ * fijo en el código permitiría falsificar la cookie. Va en globalThis porque
+ * cada ruta de Next empaqueta su propia copia de este módulo.
+ */
+const fallbackSecrets = globalThis as typeof globalThis & {
+  __rxAdminSecret?: string;
+  __rxKitchenSecret?: string;
+};
+fallbackSecrets.__rxAdminSecret ??= randomBytes(32).toString("hex");
+fallbackSecrets.__rxKitchenSecret ??= randomBytes(32).toString("hex");
+
+function adminSessionSecret() {
+  return process.env.ADMIN_SESSION_SECRET || fallbackSecrets.__rxAdminSecret!;
+}
 
 function envAdminPassword() {
   const value = process.env.ADMIN_PASSWORD?.trim();
@@ -55,7 +72,7 @@ async function ensureAdminSettings(password: string) {
 
 export async function setAdminSession() {
   const jar = await cookies();
-  jar.set(ADMIN_COOKIE, process.env.ADMIN_SESSION_SECRET || "rx-session-ok", {
+  jar.set(ADMIN_COOKIE, adminSessionSecret(), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -72,7 +89,7 @@ export async function clearAdminSession() {
 export async function isAdminAuthenticated() {
   const jar = await cookies();
   const value = jar.get(ADMIN_COOKIE)?.value;
-  return value === (process.env.ADMIN_SESSION_SECRET || "rx-session-ok");
+  return value === adminSessionSecret();
 }
 
 const KITCHEN_COOKIE = "rx_kitchen";
@@ -84,7 +101,7 @@ function envKitchenPassword() {
 }
 
 function kitchenSessionSecret() {
-  return process.env.KITCHEN_SESSION_SECRET || "rx-kitchen-session-secret";
+  return process.env.KITCHEN_SESSION_SECRET || fallbackSecrets.__rxKitchenSecret!;
 }
 
 export function verifyKitchenPassword(password: string) {

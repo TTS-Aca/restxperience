@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
 import { CATEGORY_ORDER, MENU_SEED } from "./menu-data";
+import { sampleImageFor } from "./menu-images";
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,7 @@ async function main() {
     where: { id: "default" },
   });
   if (alreadySeeded && process.env.FORCE_SEED !== "1") {
+    await addSampleImages();
     console.log("Seed omitido: la base ya tiene datos. FORCE_SEED=1 para resetear.");
     return;
   }
@@ -78,6 +80,7 @@ async function main() {
         description: item.description || "",
         ingredients: item.ingredients || "",
         calories: item.calories ?? null,
+        imageUrl: sampleImageFor(item.category, item.name),
         categoryId,
         sortOrder: i,
         available: true,
@@ -110,6 +113,29 @@ async function main() {
   console.log("Seed complete.");
   console.log("Admin password:", process.env.ADMIN_PASSWORD || "restx-admin");
   console.log("Admin panel: /rx-admin");
+}
+
+/**
+ * Bases sembradas antes de que existieran las fotos de muestra.
+ * Solo toca platillos del menú de ejemplo que siguen sin imagen ni video,
+ * así nunca pisa lo que el restaurante haya cargado.
+ */
+async function addSampleImages() {
+  const seedKeys = new Set(MENU_SEED.map((item) => `${item.category}::${item.name}`));
+  const products = await prisma.product.findMany({
+    where: { imageUrl: null, videoUrl: null },
+    include: { category: true },
+  });
+
+  let updated = 0;
+  for (const product of products) {
+    if (!seedKeys.has(`${product.category.name}::${product.name}`)) continue;
+    const imageUrl = sampleImageFor(product.category.name, product.name);
+    if (!imageUrl) continue;
+    await prisma.product.update({ where: { id: product.id }, data: { imageUrl } });
+    updated += 1;
+  }
+  if (updated) console.log(`Fotos de muestra asignadas: ${updated}`);
 }
 
 main()
