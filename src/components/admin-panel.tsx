@@ -10,6 +10,12 @@ import {
   videoDurationError,
 } from "@/lib/video-duration";
 
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending_payment: "pago pendiente",
+  paid: "pagado",
+  cancelled: "cancelado",
+};
+
 type Product = {
   id: string;
   name: string;
@@ -486,7 +492,9 @@ export function AdminPanel({ origin }: { origin: string }) {
                   <div>
                     <p className="font-medium text-white">
                       {o.session.table.label} ·{" "}
-                      <span className="text-[#c4a574]">{o.status}</span>
+                      <span className="text-[#c4a574]">
+                        {ORDER_STATUS_LABEL[o.status] ?? o.status}
+                      </span>
                       {o.comandaSent ? " · comanda enviada" : " · sin comanda"}
                     </p>
                     <p className="text-xs text-white/40">
@@ -895,8 +903,9 @@ export function AdminPanel({ origin }: { origin: string }) {
               <p className="text-xs leading-relaxed text-white/40">
                 En Stripe y SoftRestaurant la comanda solo se libera cuando el
                 pago confirma. Sin pago no llega nada a la mesa. Sesiones sin
-                concretar se cierran a los 15 minutos. SoftRestaurant: endpoint
-                pendiente de investigar; mientras el stub simula el envío.
+                concretar se cierran a los 15 minutos. La conexión directa con
+                SoftRestaurant se configura por separado; mientras tanto el
+                envío se simula.
               </p>
             </div>
 
